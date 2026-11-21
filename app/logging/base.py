@@ -173,7 +173,8 @@ class BotLog:
             self.logger.level("UPSEQ", no=22, color="<light-green>", icon="🔼"),
             self.logger.level("DOWNSEQ", no=23, color="<light-green>", icon="🔽"),
             self.logger.level("KILL", no=24, color="<light-green>", icon="☠️"),
-            self.logger.level("TIME", no=25, color="<light-green>", icon="⌛")
+            self.logger.level("TIME", no=25, color="<light-green>", icon="⌛"),
+            self.logger.level("STUDY METHOD ACTION", no=25, color="<light-green>", icon="⌛"),
             ]
 
     def create_levels_organ(self):
@@ -201,6 +202,10 @@ class BotLog:
     def create_levels_user(self):
         return [
             self.logger.level("USER CREATE", no=51, color="<green>", icon="👤"),
+            self.logger.level("GET ACTIVITY POINTS", no=52, color="<green>", icon="🪙"),
+            self.logger.level("ACTIVITY POINTS ADD", no=53, color="<green>", icon="➕"),
+            self.logger.level("ACTIVITY POINTS DEDUCT", no=54, color="<green>", icon="➖"),
+            self.logger.level("ACTIVITY POINTS RESET", no=55, color="<green>", icon="♻️"),
         ]
 
     def create_levels_question(self):
@@ -264,6 +269,49 @@ class BotLog:
             **kwargs | {'user_id': user_id, 'tg_id': tg_id},
         )
 
+    def get_activity_points(self, points: int, all_points: int, reason: str | None = None, **kwargs):
+        self.logger.log(
+            'GET ACTIVITY POINTS',
+            f'Получены очки активости: {points}{f', причина: "{reason}"' if reason else ''}',
+            **kwargs | {'points': points, 'all_points': all_points, 'reason':reason},
+        )
+
+    def activity_points_add(self, admin_id: int, user_id: int, points: int, reason: str | None = None):
+        self.logger.log(
+            'ACTIVITY POINTS ADD',
+            'Администратор начислил очки активности',
+            admin_id=admin_id,
+            user_id=user_id,
+            points=points,
+            reason=reason,
+        )
+
+    def activity_points_deduct(self, admin_id: int, user_id: int, points: int, reason: str | None = None):
+        self.logger.log(
+            'ACTIVITY POINTS DEDUCT',
+            'Администратор снял очки активности',
+            admin_id=admin_id,
+            user_id=user_id,
+            points=points,
+            reason=reason,
+        )
+
+    def activity_points_reset(
+        self,
+        admin_id: int,
+        user_id: int,
+        removed_points: int,
+        reason: str | None = None,
+    ):
+        self.logger.log(
+            'ACTIVITY POINTS RESET',
+            'Администратор обнулил баланс очков активности',
+            admin_id=admin_id,
+            user_id=user_id,
+            removed_points=removed_points,
+            reason=reason,
+        )
+
     def question_create(self, question_id: int, user_id: int, **kwargs):
         self.logger.log(
             'QUESTION CREATE',
@@ -316,6 +364,10 @@ class BotLog:
             'DRINK', f'Изменено время продвижения: {old_time} >>> {new_time}', 
             **kwargs | {'old_time':old_time, 'new_time': new_time})
 
+    def study_method_action(self, precent_study: float, activity_points: int, all_activity_points: int, activity_points_emodzi: str, **kwargs):
+        self.logger.log(
+            'STUDY METHOD ACTION', f'Изучил метод действия на {precent_study:.2f}% потратив {activity_points} {activity_points_emodzi}', 
+            **kwargs | {'precent_study':precent_study, 'activity_points':activity_points, 'all_activity_points':all_activity_points})
 
 
     def organ_create(self, organ_name: str, organ_id: int, **kwargs):
@@ -421,3 +473,8 @@ class BotLog:
         
 botlog = BotLog()
 log = botlog.logger
+
+class BotLogger(BotLog):
+    def __init__(self, logger = loguru.logger):
+        self.loguru = loguru
+        self.logger = logger

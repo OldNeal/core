@@ -25,7 +25,6 @@ class AnswerUserBody(BaseAPIValidate):
 class QueryBody(BaseAPIValidate):
     user_id: int
     is_admin: bool = False
-    request_id: str | None = None
 
 class QueryUserUpdate(QueryBody):
     telegram: TelegramBody | None = None
@@ -112,3 +111,19 @@ class AnswerUsersBody(AnswerBaseBody):
     users: list[AnswerUserBody]
     page: Page | None = None
     count: int = 0
+
+class ActivityPoints(AnswerBody):
+    activity_points: int = 0
+    
+class AnswerActivityPoints(ActivityPoints):
+    get_activity_points: int = 0
+
+class AnswerActivityPointsLimitReset(ActivityPoints):
+    pass
+
+class AnswerActivityPointsLimit(AnswerBody):
+    used: int = 0
+    limit: int = 0
+    remaining: int = 0
+    ttl: int = 0
+    points_per_message: int = 0

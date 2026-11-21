@@ -23,7 +23,9 @@ class Question(QustionBase):
 
 class AnswerQuestionAnswer(AnswerBody):
     answer_id: int
+    is_correct: bool
     question: Question
+    activity_points: int = 0 
 
 class AnswerQuestion(AnswerBody):
     question: Question
@@ -55,3 +57,9 @@ class UserQuestionStatistics(BaseAPIValidate):
 
 class AnswerUserQuestionStatistics(AnswerBody):
     statistics: UserQuestionStatistics
+
+class AnswerQuestionLimit(AnswerBaseBody):
+    used: int = 0
+    limit: int = 0
+    remaining: int = 0
+    ttl: int = 0

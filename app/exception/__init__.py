@@ -1,7 +1,13 @@
 from .base import PermissionException, BaseException, BaseExceptionResponse, UserDontFind, DBError, RedisError
-from .beyonder import PathDontEnterException, SeqBusyException, UpseqNotComeException, DontBeyonderException, ALreadyBeyonderException, SeqDontExistException
+from .beyonder import PathDontEnterException, SeqBusyException, UpseqNotComeException, DontBeyonderException, ALreadyBeyonderException, SeqDontExistException, MethodActionFullStudyError, HaveActivityPointsError
 from .wiki import PathDontSearchException, PathDontEnterFilterException
-from .question import QuestionDontFindException, AnswerDontFindException
+from .question import (
+    QuestionDontFindException,
+    AnswerDontFindException,
+    QuestionAlreadyAnsweredException,
+    QuestionDailyLimitException,
+)
+from .item import ItemDontFindException, ItemQuantityException
 from .organ import DontMemberError, ALreadyOwnerError, DontEnterPurposeError, ExistRankError, ExistOrganError, InOneOrganError, ALreadyMemberError, OrganPermissioError, OrganPermissionNewRankError, OrganPermissionPurposeRankError, ClosenOrganError, HiddenOrganError
 from .logs import DontLogFileException, DontHavePermissionException, DontExistCategoryException
 from .newspaper import ExistNewsPaperError, ReaderError, NewsPaperPermissioError
@@ -43,7 +49,13 @@ exceptions: list[type[BaseException]] = [
     ReaderError,
     NewsPaperPermissioError,
     QuestionDontFindException,
-    AnswerDontFindException
+    AnswerDontFindException,
+    QuestionAlreadyAnsweredException,
+    QuestionDailyLimitException,
+    ItemDontFindException,
+    ItemQuantityException,
+    MethodActionFullStudyError,
+    HaveActivityPointsError
 ]
 
 exception_codes = {e.status_code:e for e in exceptions}

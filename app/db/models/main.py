@@ -5,6 +5,7 @@ from app.db.models.beyonder import BeyonderDB
 from app.db.models.organ import MemberDB
 from app.db.models.newspaper import ReaderDB
 from app.db.models.player import PlayerDB
+from app.db.models.item import InventoryDB
 
 class TgUserDB(Base):
     tg_id: Mapped[int] = mapped_column(BigInteger, unique=True)
@@ -28,7 +29,8 @@ class UserDB(Base):
     member: Mapped[MemberDB | None] = relationship('MemberDB', uselist=False, lazy='joined', back_populates='user', cascade='all, delete-orphan')
     player: Mapped[PlayerDB | None] = relationship('PlayerDB', uselist=False, lazy='joined', back_populates='user', cascade='all, delete-orphan')
     readers: Mapped[list['ReaderDB']] = relationship('ReaderDB', uselist=True, lazy='select', back_populates='user', cascade='all, delete-orphan')
-
+    inventory: Mapped[InventoryDB | None] = relationship('InventoryDB', uselist=False, lazy='joined', back_populates='user', cascade='all, delete-orphan')
+ 
     @property
     def name(self):
         return self.tg_user.fullname if self._name is None and self.tg_user else self._name

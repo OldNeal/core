@@ -1,4 +1,7 @@
-from app.logic.base import BaseLogic
+import random
+from datetime import datetime, timedelta
+
+from app.logic.activity import ActivityLogic
 from app.validate.api.question import (
     AnswerAllQuestions,
     AnswerQuestion,
@@ -7,6 +10,7 @@ from app.validate.api.question import (
     AnswerQuestionStatistics,
     AnswerRandomQuestion,
     AnswerUserQuestionStatistics,
+    AnswerQuestionLimit,
     Question,
     QuestionAnswer,
     QuestionAnswerStatistics,
@@ -16,9 +20,16 @@ from app.validate.api.question import (
 from app.db.models.question import AnswerQuestionDB, EruditeDB, QuestionDB, ResultsQuestionDB
 from app.db.models.player import PlayerDB
 from app.exception.base import ParametrValidationException, PermissionException
-from app.exception.question import AnswerDontFindException, QuestionDontFindException
+from app.exception.question import (
+    AnswerDontFindException,
+    QuestionAlreadyAnsweredException,
+    QuestionDailyLimitException,
+    QuestionDontFindException,
+)
 
-class QuestionLogic(BaseLogic):
+MAX_DAILY_QUESTION_ANSWERS = 20
+
+class QuestionLogic(ActivityLogic):
     async def check_erudite(self, user_id: int | None):
         if user_id is None:
             raise ParametrValidationException('Не указан ID пользователя')
@@ -36,7 +47,26 @@ class QuestionLogic(BaseLogic):
             raise QuestionDontFindException()
         return question
 
-    def question_body(self, question: QuestionDB, show_correct: bool = False):
+    async def check_daily_question_limit(self, user_id: int):
+        taken_today = await self.store.question.get_daily_taken_questions(user_id)
+        if taken_today >= MAX_DAILY_QUESTION_ANSWERS:
+            raise QuestionDailyLimitException(max_daily_question_answers=MAX_DAILY_QUESTION_ANSWERS)
+
+    async def get_daily_question_limit(self):
+        used, ttl = await self.store.question.get_daily_taken_questions_limit(self.user_id)
+        return AnswerQuestionLimit(
+            used=used,
+            limit=MAX_DAILY_QUESTION_ANSWERS,
+            remaining=max(0, MAX_DAILY_QUESTION_ANSWERS - used),
+            ttl=ttl,
+        )
+
+    def question_body(
+        self,
+        question: QuestionDB,
+        show_correct: bool = False,
+        answers: list[AnswerQuestionDB] | None = None,
+    ):
         return Question(
             question_id=question.id,
             body=question.body,
@@ -47,7 +77,7 @@ class QuestionLogic(BaseLogic):
                     body=answer.body,
                     is_correct=answer.is_correct if show_correct else None,
                 )
-                for answer in question.answers
+                for answer in (question.answers if answers is None else answers)
             ],
         )
 
@@ -87,18 +117,58 @@ class QuestionLogic(BaseLogic):
         if answer is None:
             raise AnswerDontFindException()
         user = await self.check_erudite(self.user_id)
+        if answer.is_correct:
+            last_answered_at = await self.dao.results_question.last_answered_at(
+                user.player.erudite.id,
+                answer_id,
+            )
+            if last_answered_at and last_answered_at > datetime.now() - timedelta(days=14):
+                raise QuestionAlreadyAnsweredException()
         await user.player.erudite.awaitable_attrs.results
         user.player.erudite.results.append(ResultsQuestionDB(answer_id=answer_id))
         await self.dao.flush()
+        if answer.is_correct:
+            item, activity_points = await self.get_activity_points_question()
+        else:
+            activity_points = 0
         return AnswerQuestionAnswer(
             user=self.return_query_body(user),
             purpose=self.return_query_body(user),
             answer_id=answer_id,
+            is_correct=answer.is_correct,
+            question=self.question_body(
+                question,
+                show_correct=question.author_id == user.player.erudite.id,
+            ),
+            activity_points=activity_points
+        )
+
+    async def answer_the_question_incorrect(self, question_id: int):
+        question = await self.check_question(question_id)
+        answer = next(
+            (answer for answer in question.answers if not answer.is_correct),
+            None,
+        )
+        if answer is None:
+            raise AnswerDontFindException()
+
+        user = await self.check_erudite(self.user_id)
+        await user.player.erudite.awaitable_attrs.results
+        user.player.erudite.results.append(ResultsQuestionDB(answer_id=answer.id))
+        await self.dao.flush()
+        return AnswerQuestionAnswer(
+            user=self.return_query_body(user),
+            purpose=self.return_query_body(user),
+            answer_id=answer.id,
+            is_correct=False,
             question=self.question_body(
                 question,
                 show_correct=question.author_id == user.player.erudite.id,
             ),
         )
+
+    async def answer_the_question_wrong(self, question_id: int):
+        return await self.answer_the_question_incorrect(question_id)
 
     async def search(self, value: str, page: int | None = None, per_page: int = 5):
         if not value.strip():
@@ -119,13 +189,44 @@ class QuestionLogic(BaseLogic):
             count=count,
         )
 
-    async def random_question(self):
-        question = await self.dao.question.find_random()
-        if question is None:
-            raise QuestionDontFindException()
-        return AnswerRandomQuestion(
-            question=(await self.questions_response([question]))[0],
+    async def random_question(self, correct_count: int = 1, incorrect_count: int = 3):
+        user = await self.check_erudite(self.user_id)
+        await self.check_daily_question_limit(user.id)
+        erudite_id = user.player.erudite.id
+        now = datetime.now()
+        answered_after = now - timedelta(days=14)
+        incorrect_answered_after = now - timedelta(days=3)
+        question = await self.dao.question.find_random_with_answer_counts(
+            correct_count,
+            incorrect_count,
+            erudite_id,
+            answered_after,
+            incorrect_answered_after,
         )
+        if question is None:
+            raise QuestionDontFindException('Вопросы пока что закончились')
+        recently_answered_ids = set(await self.dao.question.recently_answered_correct_ids(
+            erudite_id,
+            question.id,
+            answered_after,
+        ))
+        correct_answers = [
+            answer
+            for answer in question.answers
+            if answer.is_correct and answer.id not in recently_answered_ids
+        ]
+        incorrect_answers = [answer for answer in question.answers if not answer.is_correct]
+        answers = random.sample(correct_answers, correct_count) + random.sample(
+            incorrect_answers,
+            incorrect_count,
+        )
+        random.shuffle(answers)
+        response = AnswerRandomQuestion(
+            question=self.question_body(question, answers=answers),
+        )
+        if not await self.store.question.take_question(user.id, MAX_DAILY_QUESTION_ANSWERS):
+            raise QuestionDailyLimitException(max_daily_question_answers=MAX_DAILY_QUESTION_ANSWERS)
+        return response
 
     async def my_questions(self, page: int | None = None, per_page: int = 5):
         if self.user_id is None:

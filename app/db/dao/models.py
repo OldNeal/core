@@ -5,6 +5,7 @@ from app.db.models.organ import OrganDB, MemberDB
 from app.db.models.newspaper import NewsPaperDB, ReaderDB, EDITOR_RANK
 from app.db.models.player import PlayerDB
 from app.db.models.question import EruditeDB, QuestionDB, AnswerQuestionDB, ResultsQuestionDB
+from app.db.models.item import InventoryDB, ItemDB, ItemSketchDB
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select, update, delete, func, join, or_, all_, and_, any_
 from sqlalchemy.orm import selectinload, joinedload
@@ -310,6 +311,14 @@ class PathDAO(BaseDAO[PathDB]):
         if self.load:
             query = query.options(*self.load)
         return await self.paginate(query, page, per_page)
+
+    async def neighbor_paths(self, ga_id: int):
+        try:
+            query = select(func.count()).select_from(self.model).filter_by(ga_id=ga_id)
+            result = await self.session.scalar(query)
+            return result or 0
+        except SQLAlchemyError as e:
+            raise
 
 class SequenceDAO(BaseDAO[SequenceDB]):
     model = SequenceDB
@@ -655,6 +664,90 @@ class QuestionDAO(BaseDAO[QuestionDB]):
         result = await self.session.execute(query)
         return result.unique().scalars().first()
 
+    async def find_random_with_answer_counts(
+        self,
+        correct_count: int,
+        incorrect_count: int,
+        erudite_id: int,
+        answered_after: datetime,
+        incorrect_answered_after: datetime,
+    ):
+        correct_answers_query = (
+            select(func.count(AnswerQuestionDB.id))
+            .where(
+                AnswerQuestionDB.question_id == self.model.id,
+                AnswerQuestionDB.is_correct.is_(True),
+            )
+        )
+        recent_answer = (
+            select(ResultsQuestionDB.id)
+            .where(
+                ResultsQuestionDB.answer_id == AnswerQuestionDB.id,
+                ResultsQuestionDB.erudite_id == erudite_id,
+                ResultsQuestionDB.created_at >= answered_after,
+            )
+            .exists()
+        )
+        recent_incorrect_answer = (
+            select(ResultsQuestionDB.id)
+            .join(AnswerQuestionDB, ResultsQuestionDB.answer_id == AnswerQuestionDB.id)
+            .where(
+                AnswerQuestionDB.question_id == self.model.id,
+                AnswerQuestionDB.is_correct.is_(False),
+                ResultsQuestionDB.erudite_id == erudite_id,
+                ResultsQuestionDB.created_at >= incorrect_answered_after,
+            )
+            .correlate(self.model)
+            .exists()
+        )
+        correct_answers_count = (
+            correct_answers_query
+            .where(~recent_answer)
+            .correlate(self.model)
+            .scalar_subquery()
+        )
+        incorrect_answers_count = (
+            select(func.count(AnswerQuestionDB.id))
+            .where(
+                AnswerQuestionDB.question_id == self.model.id,
+                AnswerQuestionDB.is_correct.is_(False),
+            )
+            .correlate(self.model)
+            .scalar_subquery()
+        )
+        query = (
+            self._questions_query()
+            .where(
+                correct_answers_count >= correct_count,
+                incorrect_answers_count >= incorrect_count,
+                ~recent_incorrect_answer,
+            )
+            .order_by(None)
+            .order_by(func.random())
+            .limit(1)
+        )
+        result = await self.session.execute(query)
+        return result.unique().scalars().first()
+
+    async def recently_answered_correct_ids(
+        self,
+        erudite_id: int,
+        question_id: int,
+        answered_after: datetime,
+    ):
+        query = (
+            select(AnswerQuestionDB.id)
+            .join(ResultsQuestionDB, ResultsQuestionDB.answer_id == AnswerQuestionDB.id)
+            .where(
+                AnswerQuestionDB.question_id == question_id,
+                AnswerQuestionDB.is_correct.is_(True),
+                ResultsQuestionDB.erudite_id == erudite_id,
+                ResultsQuestionDB.created_at >= answered_after,
+            )
+        )
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
     async def answer_statistics(self, question_id: int):
         query = (
             select(
@@ -677,6 +770,16 @@ class AnswerQuestionDAO(BaseDAO[AnswerQuestionDB]):
 class ResultsQuestionDAO(BaseDAO[ResultsQuestionDB]):
     model = ResultsQuestionDB
 
+    async def last_answered_at(self, erudite_id: int, answer_id: int):
+        query = (
+            select(func.max(self.model.created_at))
+            .where(
+                self.model.erudite_id == erudite_id,
+                self.model.answer_id == answer_id,
+            )
+        )
+        return await self.session.scalar(query)
+
     async def statistics_by_user(self, user_id: int):
         query = (
             select(AnswerQuestionDB.is_correct, func.count(self.model.id))
@@ -688,6 +791,59 @@ class ResultsQuestionDAO(BaseDAO[ResultsQuestionDB]):
         )
         result = await self.session.execute(query)
         return dict(result.all())
+
+
+class ItemSketchDAO(BaseDAO[ItemSketchDB]):
+    model = ItemSketchDB
+
+    async def query_by_tag(self, tag: str):
+        return await self.find_one_or_none({'tag': tag})
+
+
+class InventoryDAO(BaseDAO[InventoryDB]):
+    model = InventoryDB
+
+    async def query_by_user_id(self, user_id: int):
+        return await self.find_one_or_none({'user_id': user_id})
+
+
+class ItemDAO(BaseDAO[ItemDB]):
+    model = ItemDB
+    load = [joinedload(model.sketch)]
+
+    async def query_by_inventory_and_sketch(self, inventory_id: int, sketch_id: int):
+        return await self.find_one_or_none({
+            'inventory_id': inventory_id,
+            'sketch_id': sketch_id,
+        })
+
+    async def query_by_user_id_and_tag(self, user_id: int, tag: str):
+        query = (
+            select(self.model)
+            .join(InventoryDB, self.model.inventory_id == InventoryDB.id)
+            .join(ItemSketchDB, self.model.sketch_id == ItemSketchDB.id)
+            .where(InventoryDB.user_id == user_id, ItemSketchDB.tag == tag)
+        )
+        if self.load:
+            query = query.options(*self.load)
+        result = await self.session.execute(query)
+        return result.unique().scalar_one_or_none()
+
+    async def query_inventory_paginated(
+        self,
+        inventory_id: int,
+        page: int | None = None,
+        per_page: int = 5,
+    ):
+        query = (
+            select(self.model)
+            .where(self.model.inventory_id == inventory_id)
+            .order_by(self.model.id)
+        )
+        if self.load:
+            query = query.options(*self.load)
+        return await self.paginate(query, page, per_page)
+
 
 class DAO:
     def __init__(self, session: AsyncSession):
@@ -711,6 +867,9 @@ class DAO:
         self.question = QuestionDAO(self.session)
         self.answer_question = AnswerQuestionDAO(self.session)
         self.results_question = ResultsQuestionDAO(self.session)
+        self.item_sketch = ItemSketchDAO(self.session)
+        self.inventory = InventoryDAO(self.session)
+        self.item = ItemDAO(self.session)
 
     async def flush(self):
         await self.session.flush()  
@@ -723,3 +882,7 @@ class DAO:
         
     async def rollback(self):
         await self.session.rollback()  
+
+    @classmethod
+    def update_object(self, record, values: dict):
+        return BaseDAO.update_obj(record, values)
