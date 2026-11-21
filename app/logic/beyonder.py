@@ -1,6 +1,6 @@
 from app.logic.base import BaseLogic
 from datetime import datetime, timedelta
-from app.exception.beyonder import SeqDontExistException, UpseqNotComeException, ALreadyBeyonderException, PathDontEnterException, SeqBusyException, HaveActivityPointsError, MethodActionFullStudyError
+from app.exception.beyonder import SeqDontExistException, UpseqError, UpseqNotComeException, ALreadyBeyonderException, PathDontEnterException, SeqBusyException, HaveActivityPointsError, MethodActionFullStudyError
 from app.exception.wiki import PathDontSearchException
 from app.validate.api.beyonder import (AnswerTimeReplace, 
                                        AnswerTimeRedact, 
@@ -17,20 +17,24 @@ from app.validate.api.beyonder import (AnswerTimeReplace,
                                        Points)
 from app.logic.seq import sequences
 from app.logic.activity import ACTIVITY_POINTS_TAG
+from app.db.models.item import InventoryDB
 
 class BeyonderLogic(BaseLogic):
     async def get_upseq_time(self, seq: int, ga_id: int, study_method_action: float = 0.0):
         paths = await self.dao.path.neighbor_paths(ga_id) if seq == 0 else None
         return self._get_upseq_time(seq, paths, study_method_action)
 
-    def _get_upseq_time(self, seq: int, paths: int | None = None, study_method_action: float = 0.0):
+    def _get_upseq_time(self, seq: int, paths: int | None = None, study_method_action: float = 0.0, upseq: float = 0.0):
+        return datetime.now() + self._upseq_time(seq, paths, study_method_action, upseq)
+
+    def _upseq_time(self, seq: int, paths: int | None = None, study_method_action: float = 0.0, upseq: float = 0.0):
         if 10 > seq > 0:
             upseq_time = timedelta(days=sequences.get(seq).days)
         elif seq == 0 and paths is not None:
             upseq_time = timedelta(days=sequences.get(seq).days*paths)
         else:
             raise SeqDontExistException(seq=seq)
-        return datetime.now() + upseq_time*(1 - float(study_method_action)/2)
+        return upseq_time*(1 - float(study_method_action)/2 - float(upseq))
 
 
     def check_exist_seq(self, seq: int):
@@ -264,6 +268,14 @@ class BeyonderLogic(BaseLogic):
 
     async def study_method_action(self, study_points: int):
         user = await self.get_user(self.user_id)
+        if user.inventory is None:
+            inventory = InventoryDB()
+            user.inventory = inventory
+            await self.dao.flush()
+        if user.beyonder.ga_id:
+            raise SeqDontExistException()
+        if user.beyonder.upseq_date.total_seconds() <= 0:
+            raise UpseqError()
         await user.inventory.awaitable_attrs.items
         activity_points = user.inventory.items_by_sketch_tag.get(ACTIVITY_POINTS_TAG)
         if activity_points is None or activity_points.quantity - study_points < 0:
@@ -281,7 +293,8 @@ class BeyonderLogic(BaseLogic):
         user.beyonder.next_upseq = self._get_upseq_time(
             user.beyonder.seq_number, 
             paths,
-            user.beyonder.study_method_action(paths)
+            user.beyonder.study_method_action(paths),
+            user.beyonder.precenty_upseq(paths)
             )
         if activity_points.quantity <= 0:
             user.inventory.items.remove(activity_points)

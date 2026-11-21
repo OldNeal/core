@@ -39,7 +39,7 @@ class UpseqNotComeException(BeyonderException):
         return "⌛ {details}"
 
 class SeqDontExistException(BeyonderException):
-    default_message = 'Незвестная последовательность'
+    default_message = 'Незвестная последовательность (выше вашей последовательности ничего нет)'
     status_code = 456
 
 class PathDontEnterException(BeyonderException):
@@ -57,4 +57,8 @@ class HaveActivityPointsError(BaseException):
 class MethodActionFullStudyError(BaseException):
     default_message = 'Требуемое количество очков активности для полного изучения метода действия: {study_points}'
     status_code = 439
+    
+class UpseqError(BaseException):
+    default_message = 'Вы уже можете продвинуться'
+    status_code = 472
     

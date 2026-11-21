@@ -7,6 +7,9 @@ class Sequence:
         self.rsp_factor = rsp_factor
         self.rsp = GET_ACTIVITY_POINTS_LIMIT*days*rsp_factor//2
 
+    def total_seconds(self):
+        return self.days*24*60*60
+
 sequence_list = [
     Sequence(9, 7),
     Sequence(8, 14),
