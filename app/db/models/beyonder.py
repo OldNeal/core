@@ -107,7 +107,7 @@ class BeyonderDB(Base):
         return (self.next_upseq - datetime.now()) if self.next_upseq else None
 
     def precenty_upseq(self, paths: int | None = None):
-        return 1 - (Decimal(self.upseq_date.total_seconds()) / Decimal(sequences.get(self.seq_number).total_seconds() * paths or 1)).quantize(Decimal('0.0001'), ROUND_HALF_DOWN) if self.next_upseq and self.seq_number >= 0 else None
+        return 1 - (Decimal(self.upseq_date.total_seconds()) / Decimal(sequences.get(self.seq_number).total_seconds() * (paths or 1))).quantize(Decimal('0.0001'), ROUND_HALF_DOWN) if self.next_upseq and self.seq_number >= 0 else None
  
     @property
     def path_name(self):
