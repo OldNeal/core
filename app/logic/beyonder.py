@@ -20,22 +20,24 @@ from app.logic.activity import ACTIVITY_POINTS_TAG
 from app.db.models.item import InventoryDB
 
 class BeyonderLogic(BaseLogic):
-    async def get_upseq_time(self, seq: int, ga_id: int, study_method_action: float = 0.0):
+    async def get_upseq_time(self, seq: int, ga_id: int):
         paths = await self.dao.path.neighbor_paths(ga_id) if seq == 0 else None
-        return self._get_upseq_time(seq, paths, study_method_action)
+        return self._get_upseq_time(seq, paths)
 
-    def _get_upseq_time(self, seq: int, paths: int | None = None, study_method_action: float = 0.0, upseq: float = 0.0):
-        return datetime.now() + self._upseq_time(seq, paths, study_method_action, upseq)
+    def _get_upseq_time(self, seq: int, paths: int | None = None):
+        return datetime.now() + self._upseq_time(seq, paths)
 
-    def _upseq_time(self, seq: int, paths: int | None = None, study_method_action: float = 0.0, upseq: float = 0.0):
+    def _upseq_time(self, seq: int, paths: int | None = None):
         if 10 > seq > 0:
             upseq_time = timedelta(days=sequences.get(seq).days)
         elif seq == 0 and paths is not None:
             upseq_time = timedelta(days=sequences.get(seq).days*paths)
         else:
             raise SeqDontExistException(seq=seq)
-        return upseq_time*(1 - float(study_method_action)/2 - float(upseq))
+        return upseq_time
 
+    def study_upseq_time(self, seq: int, paths: int | None = None, study_method_action: float = 0):
+        return self._upseq_time(seq, paths)*float(study_method_action)/2
 
     def check_exist_seq(self, seq: int):
         if seq > 9 or seq < -1:
@@ -276,6 +278,19 @@ class BeyonderLogic(BaseLogic):
             raise SeqDontExistException()
         if user.beyonder.upseq_date.total_seconds() <= 0:
             raise UpseqError()
+        old_time = user.beyonder.next_upseq
+        if study_points == 0:
+            return AnswerStudyMethodAction(
+            user=self.return_query_body(user),
+            purpose=self.return_query_body(user),
+            points=None,
+            time=TimeRedact(
+            old_time=old_time,
+            new_time=user.beyonder.next_upseq,
+            seconds=0,
+            operator='-',
+            )
+        ).to_query(user)
         await user.inventory.awaitable_attrs.items
         activity_points = user.inventory.items_by_sketch_tag.get(ACTIVITY_POINTS_TAG)
         if activity_points is None or activity_points.quantity - study_points < 0:
@@ -285,16 +300,14 @@ class BeyonderLogic(BaseLogic):
         required_study_points = max(0, user.beyonder.rsp(paths) - old_study_points)
         if study_points > required_study_points:
             raise MethodActionFullStudyError(study_points=required_study_points)
-        old_time = user.beyonder.next_upseq
         old_activity_points = activity_points.quantity
         old_precent_study = user.beyonder.precent_study_method_action(paths)
         activity_points.quantity -= study_points
         user.beyonder.study_points += study_points
-        user.beyonder.next_upseq = self._get_upseq_time(
+        user.beyonder.next_upseq -= self.study_upseq_time(
             user.beyonder.seq_number, 
             paths,
-            user.beyonder.study_method_action(paths),
-            user.beyonder.precenty_upseq(paths)
+            user.beyonder.math_study_method_action(study_points, paths)
             )
         if activity_points.quantity <= 0:
             user.inventory.items.remove(activity_points)
@@ -306,8 +319,8 @@ class BeyonderLogic(BaseLogic):
             activity_points.sketch.emodzi
             )
         return AnswerStudyMethodAction(
-            user=await self.query_body(self.user_id),
-            purpose=await self.query_body(user.id),
+            user=self.return_query_body(user),
+            purpose=self.return_query_body(user),
             points=Points(
                 study_method_action=user.beyonder.study_method_action(paths) - old_precent_study / 100,
                 study_points=Point(old=old_study_points, new=study_points),
