@@ -51,6 +51,7 @@ class AnswerTimeInfo(AnswerBeyonderInfo):
     next_upseq: datetime | None
     last_upseq: datetime
     total_seconds: float | None
+    is_upseq: bool = True
 
 class AnswerBeyonderList(AnswerBaseBody):
     path: AnswerPathInfo

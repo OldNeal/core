@@ -200,6 +200,7 @@ class TgUserDAO(BaseDAO[TgUserDB]):
 
 class BeyonderDAO(BaseDAO[BeyonderDB]):
     model = BeyonderDB
+    load = [joinedload(model.user)]
     
     async def query_by_user_id(self, user_id: int):
         return await self.find_one_or_none({'user_id':user_id})
@@ -233,6 +234,17 @@ class BeyonderDAO(BaseDAO[BeyonderDB]):
                 query = query.options(*self.load)
             result = await self.session.execute(query)
             record = result.scalar_one_or_none()
+            return record
+        except SQLAlchemyError as e:
+            raise
+
+    async def query_by_seq(self, seq: int):
+        try:
+            query = select(self.model).join(SequenceDB).filter_by(number=seq)
+            if self.load and len(self.load) > 0:
+                query = query.options(*self.load)
+            result = await self.session.execute(query)
+            record = result.scalars().all()
             return record
         except SQLAlchemyError as e:
             raise

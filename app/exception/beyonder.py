@@ -59,6 +59,6 @@ class MethodActionFullStudyError(BaseException):
     status_code = 439
     
 class UpseqError(BaseException):
-    default_message = 'Вы уже можете продвинуться'
+    default_message = 'Вы уже переварили зелье'
     status_code = 472
     

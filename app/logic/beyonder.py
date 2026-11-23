@@ -186,10 +186,19 @@ class BeyonderLogic(BaseLogic):
     async def time_info(self, to_raise: bool = False):
         user = await self.get_user(is_raise_not_beyonder=True)
         remaining_time = user.beyonder.upseq_date
+        is_upseq = True
+        if user.beyonder.seq_number == 1:
+            if await self.dao.beyonder.query_by_path_id(user.beyonder.seq.path.id, user.beyonder.seq - 1):
+                is_upseq = False
+        if user.beyonder.seq_number == 0:
+            if await self.dao.beyonder.query_ga_by_ga_id(user.beyonder.seq.path.ga_id):
+                is_upseq = False
         if to_raise and remaining_time is not None and remaining_time.total_seconds() > 0:
             raise UpseqNotComeException(remaining_time=remaining_time)
+        if to_raise and is_upseq is False:
+            raise SeqBusyException(seq=user.beyonder.seq_number - 1, path_id=user.beyonder.seq.path.id)
         if user.beyonder.ga_id:
-            raise SeqDontExistException('Вы уже ВД, дальше некуда')
+            is_upseq = False
         body = await self.query_body(user.id)
         return AnswerTimeInfo(
             user=body,
@@ -197,6 +206,7 @@ class BeyonderLogic(BaseLogic):
             next_upseq=user.beyonder.next_upseq,
             last_upseq=user.beyonder.last_upseq,
             total_seconds=remaining_time.total_seconds() if not remaining_time is None else None,
+            is_upseq=is_upseq
         ).to_query(user)
     
     async def replace_time(self, new_time: datetime):
