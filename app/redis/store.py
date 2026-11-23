@@ -24,3 +24,5 @@ class Store:
 
     async def close(self):
         return await self.client.aclose()
+
+store = Store()

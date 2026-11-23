@@ -1,7 +1,7 @@
 from app.logic.base import BaseLogic
 from datetime import datetime, timedelta
 from app.exception.beyonder import SeqDontExistException, UpseqError, UpseqNotComeException, ALreadyBeyonderException, PathDontEnterException, SeqBusyException, HaveActivityPointsError, MethodActionFullStudyError
-from app.exception.wiki import PathDontSearchException
+from app.exception.wiki import DontSearchException
 from app.validate.api.beyonder import (AnswerTimeReplace, 
                                        AnswerTimeRedact, 
                                        AnswerRedactSeq, 
@@ -82,7 +82,7 @@ class BeyonderLogic(BaseLogic):
         else:
             path = await self.dao.path.query_by_id(path_id)
         if path == None:
-            raise PathDontSearchException(path_name=path_name, path_id=path_id)
+            raise DontSearchException(path_name=path_name, path_id=path_id)
         new_bndr = {
             'seq':path.sequences.get(seq), 
             'user_id':user.id, 
@@ -125,7 +125,7 @@ class BeyonderLogic(BaseLogic):
         else:
             path = user.beyonder.seq.path
         if path == None:
-            raise PathDontSearchException(path_name=path_name)
+            raise DontSearchException(path_name=path_name)
         if new_seq_number == 0:
             if await self.dao.beyonder.query_by_path_id(path.id, new_seq_number):
                 raise SeqBusyException(seq=new_seq_number, path_id=path.id)
@@ -164,7 +164,7 @@ class BeyonderLogic(BaseLogic):
         else:
             path = user.beyonder.seq.path
         if path == None:
-            raise PathDontSearchException(path_name=path_name)
+            raise DontSearchException(path_name=path_name)
         if new_seq_number > 9:
             user.beyonder = None
         else:

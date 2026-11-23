@@ -387,6 +387,17 @@ class GreatAncientDAO(BaseDAO[GreatAncientDB]):
         result = await self.session.execute(query)
         return result.scalars().all()
 
+    async def query_by_name(self, name: str):
+        try:
+            query = select(self.model).where(self.model.name.ilike(name))
+            if self.load and len(self.load) > 0:
+                query = query.options(*self.load)
+            result = await self.session.execute(query)
+            record = result.scalars().first()
+            return record
+        except SQLAlchemyError as e:
+            raise
+
     async def search_by_name(self, name: str):
         try:
             query = select(self.model).where(or_(*[func.lower(self.model.name).contains(f'%{n}%') for n in name.split(' ')]))

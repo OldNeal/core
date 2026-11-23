@@ -3,16 +3,17 @@ from app.validate.api.exception import BaseExceptionResponse
 from app.logging.base import log
 
 class BaseException(HTTPException):
-    status_code = 400
+    status_code = 500
     default_message = 'The base exception'
     model_response: type[BaseExceptionResponse] = BaseExceptionResponse
 
     def __init__(self, message: str | None = None, to_print: bool = True, **kwargs):
-        super().__init__(status_code=self.status_code, detail=message or self.default_message, headers=kwargs)
+        super().__init__(status_code=self.status_code, detail=message or self.default_message)
         self.headers = self.headers
+        self.kwargs = kwargs
         self.details = self.detail.format_map(kwargs)
         self.message = self.template.format(name=self.name, status_code=self.status_code, details=self.details)
-        self.content = self.model_response.model_validate(self.__dict__ | {'type':self.type()}).model_dump()
+        self.content = self.model_dump()
         if to_print:
             log.warning(self.message, **kwargs)
 
@@ -27,6 +28,9 @@ class BaseException(HTTPException):
     @classmethod
     def type(self):
         return self.__module__.replace('app.exception.', '').removesuffix('.py')
+
+    def model_dump(self, **kwargs):
+        return self.model_response.model_validate(self.__dict__ | {'type':self.type()} | kwargs).model_dump()
 
 class PermissionException(BaseException):
     default_message = 'Нет доступа'    

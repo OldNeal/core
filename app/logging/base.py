@@ -39,7 +39,7 @@ class BotLog:
             'serialize':True
             }, 
             {
-            "sink": LogPaths.base / PurePath('api_{time:YYYY-MM-DD}.log'),
+            "sink": LogPaths.base / PurePath('core_{time:YYYY-MM-DD}.log'),
             'rotation':"10 MB",      # новый файл каждые 10 МБ
             'retention':"30 days",    # хранить логи 7 дней
             'compression':"zip",

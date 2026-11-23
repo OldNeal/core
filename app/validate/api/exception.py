@@ -6,5 +6,6 @@ class BaseExceptionResponse(BaseAPIValidate):
     status_code: int
     headers: dict | None = None
     content: Any = None
+    kwargs: dict = {}
 
 

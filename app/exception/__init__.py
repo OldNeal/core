@@ -1,6 +1,6 @@
 from .base import PermissionException, BaseException, BaseExceptionResponse, UserDontFind, DBError, RedisError
 from .beyonder import PathDontEnterException, UpseqError, SeqBusyException, UpseqNotComeException, DontBeyonderException, ALreadyBeyonderException, SeqDontExistException, MethodActionFullStudyError, HaveActivityPointsError
-from .wiki import PathDontSearchException, PathDontEnterFilterException
+from .wiki import DontSearchException, PathDontEnterFilterException
 from .question import (
     QuestionDontFindException,
     AnswerDontFindException,
@@ -20,7 +20,7 @@ exceptions: list[type[BaseException]] = [
     DBError, 
     RedisError,
     PathDontEnterException,
-    PathDontSearchException,
+    DontSearchException,
     UpseqNotComeException,
     DontBeyonderException,
     BaseException,
@@ -62,10 +62,10 @@ exceptions: list[type[BaseException]] = [
 exception_codes = {e.status_code:e for e in exceptions}
 
 def get_exception_codes(codes: list[int] | None = None, types: list[str] | None = None):
-    base = {PermissionException.status_code:{'description':PermissionException.default_message, 'model':BaseExceptionResponse}}
+    base = {PermissionException.status_code:{'description':PermissionException.default_message, 'model':PermissionException.model_response}}
     if codes:
-        return base | {k:{'description':v.default_message, 'model':BaseExceptionResponse} for k,v in exception_codes.items() if k in codes} 
+        return base | {k:{'description':v.default_message, 'model':v.model_response} for k,v in exception_codes.items() if k in codes} 
     elif types:    
-        return base | {k:{'description':v.default_message, 'model':BaseExceptionResponse} for k,v in exception_codes.items() if v.type() in types} 
+        return base | {k:{'description':v.default_message, 'model':v.model_response} for k,v in exception_codes.items() if v.type() in types} 
     else:
-        return {k:{'description':v.default_message, 'model':BaseExceptionResponse} for k,v in exception_codes.items()} 
+        return {k:{'description':v.default_message, 'model':v.model_response} for k,v in exception_codes.items()} 

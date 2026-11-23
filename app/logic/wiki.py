@@ -1,4 +1,4 @@
-from app.exception.wiki import PathDontEnterFilterException
+from app.exception.wiki import PathDontEnterFilterException, DontSearchException
 from app.logic.base import BaseLogic
 from app.validate.api.wiki import (
     AnswerAllGAInfo,
@@ -23,6 +23,8 @@ class PathLogic(BaseLogic):
             data = await self.dao.sequence.query_by_name(name)
         else:
             raise PathDontEnterFilterException()
+        if data is None:
+            raise DontSearchException()
         return AnswerSeqFullInfo.to_query(data)
 
     async def path(self, name: str | None = None, id: int | None = None):
@@ -32,6 +34,8 @@ class PathLogic(BaseLogic):
             data = await self.dao.path.query_by_name(name)
         else:
             raise PathDontEnterFilterException()
+        if data is None:
+            raise DontSearchException()
         return AnswerPathFullInfo.to_query(data)
 
     async def ga(self, name: str | None = None, id: int | None = None):
@@ -41,6 +45,8 @@ class PathLogic(BaseLogic):
             data = await self.dao.greatancient.query_by_name(name)
         else:
             raise PathDontEnterFilterException()
+        if data is None:
+            raise DontSearchException()
         return AnswerGAFullInfo.to_query(data)
 
     async def group(self, name: str):

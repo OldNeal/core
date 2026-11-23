@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from app.exception.base import BaseException
 from config import settings, use_route_names_as_operation_ids
 from app.redis.base import lifespan
-from app.redis.store import Store
+from app.redis.store import store
 import uvicorn, asyncio
 from app.api.endpoints.main import base_router
 from app.api.midlwares import LogMidlware
@@ -64,9 +64,9 @@ use_route_names_as_operation_ids(app)
 
 async def main():
     try:
-        botlog.logger.info('API запускается')
+        botlog.logger.info('Core запускается')
         await ping_db(True)
-        await Store.start()
+        await store.start()
         botlog.start()
         uvicorn.run(
             settings.APP, 
