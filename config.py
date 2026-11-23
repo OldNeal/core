@@ -13,8 +13,8 @@ class Settings:
     DB_PORT = os.getenv('DB_PORT')
     DB_NAME = os.getenv('DB_NAME')  
     
-    TITLE = 'Old Neal Api'
-    DESCRIPTION = 'API для Старого Нила'
+    TITLE = 'Old Neal Core'
+    DESCRIPTION = 'Core для Старого Нила'
     VERSION = os.getenv('VERSION')  
     DOCS = os.getenv('DOCS', 'f')   
 

@@ -163,8 +163,8 @@ class BotLog:
     def create_levels_base(self):
         return [
             self.logger.level("QUERY", no=15, color="<blue>", icon="✉️"),
-            self.logger.level("API START", no=16, color="<white>", icon="🏁"),
-            self.logger.level("API STOP", no=17, color="<white>", icon="🛑")
+            self.logger.level("CORE START", no=16, color="<white>", icon="🏁"),
+            self.logger.level("CORE STOP", no=17, color="<white>", icon="🛑")
             ]
 
     def create_levels_bndr(self):
@@ -320,10 +320,10 @@ class BotLog:
         )
         
     def start(self, **kwargs):
-        self.logger.log('API START', f'API запущен', **kwargs)
+        self.logger.log('CORE START', f'Core запущен', **kwargs)
 
     def stop(self, **kwargs):
-        self.logger.log('API STOP', f'API останавливается', **kwargs)
+        self.logger.log('CORE STOP', f'Core останавливается', **kwargs)
 
     def drink(self, path_name: str, path_id: int, seq: int, seq_id: int, **kwargs):
         self.logger.log(

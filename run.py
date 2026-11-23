@@ -30,7 +30,7 @@ app.add_middleware(LogMidlware)
 
 @app.get('/', response_model=AnswerMain)
 def main():
-    return AnswerMain(message=f'The Old Neal API, version: {app.version}', version=app.version)
+    return AnswerMain(message=f'The Old Neal Core, version: {app.version}', version=app.version)
 
 @app.exception_handler(BaseException)
 async def handle_base_error(request, exc: BaseException):
