@@ -42,19 +42,10 @@ class ActivityLogic(ItemLogic):
             get_activity_points=points,
         )
 
-    async def get_activity_points(self, user, points: int):
+    async def change_activity_points(self, user, points: int):
         sketch, inventory, item = await self._activity_point_item(user, create=True)
-        if item is None:
-            item = ItemDB(
-                sketch_id=sketch.id,
-                inventory_id=inventory.id,
-                quantity=points,
-            )
-            self.dao.session.add(item)
-        else:
-            item.quantity += points
-        sketch.all_counts_all_time += points
-        return item
+        quantity, item = await self._change_item_quantity(item, sketch.id, inventory.id, points, True)
+        return points, item
 
     async def get_activity_points_message(self, count: int = 1):
         user = await self.get_user(self.user_id)
@@ -64,7 +55,7 @@ class ActivityLogic(ItemLogic):
             GET_ACTIVITY_POINTS_LIMIT_TTL_MESSAGE, 
             GET_ACTIVITY_POINTS_LIMIT_MESSAGE
         )
-        item = await self.get_activity_points(user, points)
+        item = await self.change_activity_points(user, points)
         await self.dao.flush()
         self.botlog.get_activity_points(points, item.quantity, 'награда за сообщения')
         return AnswerActivityPoints(
@@ -76,10 +67,10 @@ class ActivityLogic(ItemLogic):
 
     async def get_activity_points_question(self):
         user = await self.get_user(self.user_id)
-        item = await self.get_activity_points(user, ACTIVITY_POINTS_QUESTION)
+        points, item = await self.change_activity_points(user, ACTIVITY_POINTS_QUESTION)
         await self.dao.flush()
-        self.botlog.get_activity_points(ACTIVITY_POINTS_QUESTION, item.quantity, 'награда за правильный ответ на вопрос')
-        return item, ACTIVITY_POINTS_QUESTION
+        self.botlog.get_activity_points(points, item.quantity, 'награда за правильный ответ на вопрос')
+        return points, item
 
     async def reset_activity_points_limit(self, purpose_user_id: int):
         self.check_permission()

@@ -29,6 +29,7 @@ class AnswerQuestionAnswer(AnswerBody):
 
 class AnswerQuestion(AnswerBody):
     question: Question
+    activity_points: int = 0
 
 class AnswerAllQuestions(AnswerBaseBody):
     questions: list[Question]

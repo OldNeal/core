@@ -1,7 +1,7 @@
 import random
 from datetime import datetime, timedelta
 
-from app.logic.activity import ActivityLogic
+from app.logic.activity import ActivityLogic, ACTIVITY_POINTS_QUESTION
 from app.validate.api.question import (
     AnswerAllQuestions,
     AnswerQuestion,
@@ -28,6 +28,7 @@ from app.exception.question import (
 )
 
 MAX_DAILY_QUESTION_ANSWERS = 20
+CREATE_QUESTION_ACTIVITY_POINT = ACTIVITY_POINTS_QUESTION
 
 class QuestionLogic(ActivityLogic):
     async def check_erudite(self, user_id: int | None):
@@ -103,12 +104,14 @@ class QuestionLogic(ActivityLogic):
             AnswerQuestionDB(
                 body=answer, 
                 is_correct=False) for answer in data.question.incorrect_answers])
+        activity_points, item = await self.change_activity_points(user, CREATE_QUESTION_ACTIVITY_POINT)
         await self.dao.flush()
         self.botlog.question_create(question.id, user.id)
         return AnswerQuestion(
             user=self.return_query_body(user),
             purpose=self.return_query_body(user),
             question=self.question_body(question, show_correct=True),
+            activity_points=activity_points
         )
 
     async def answer_the_question(self, question_id: int, answer_id: int):
@@ -128,9 +131,10 @@ class QuestionLogic(ActivityLogic):
         user.player.erudite.results.append(ResultsQuestionDB(answer_id=answer_id))
         await self.dao.flush()
         if answer.is_correct:
-            item, activity_points = await self.get_activity_points_question()
+            activity_points, item = await self.get_activity_points_question()
         else:
             activity_points = 0
+        self.botlog.question_answer(question.id, answer.id, answer.is_correct)
         return AnswerQuestionAnswer(
             user=self.return_query_body(user),
             purpose=self.return_query_body(user),

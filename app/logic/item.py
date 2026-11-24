@@ -76,6 +76,34 @@ class ItemLogic(BaseLogic):
             count=count,
         )
 
+    async def _change_item_quantity(self, item: ItemDB | None, sketch_id: int, inventory_id: int, quantity: int, give: bool):
+        quantity = abs(quantity)
+        if give:
+            if item is None:
+                item = ItemDB(
+                    sketch_id=sketch_id,
+                    inventory_id=inventory_id,
+                    quantity=quantity,
+                )
+                self.dao.session.add(item)
+                new_quantity = quantity
+            else:
+                item.quantity += quantity
+                new_quantity = item.quantity
+        else:
+            available = item.quantity if item is not None else 0
+            if available < quantity:
+                raise ItemQuantityException(
+                    quantity=quantity,
+                    available=available,
+                )
+            new_quantity = available - quantity
+            if new_quantity:
+                item.quantity = new_quantity
+            else:
+                await self.dao.session.delete(item)
+        return new_quantity, item
+
     async def _change_item(self, item_id: int, quantity: int, give: bool):
         self.check_permission()
         user = await self.get_user(self.user_id, only_user=True)
@@ -98,31 +126,8 @@ class ItemLogic(BaseLogic):
             inventory.id,
             sketch.id,
         )
-        
-        if give:
-            if item is None:
-                item = ItemDB(
-                    sketch_id=sketch.id,
-                    inventory_id=inventory.id,
-                    quantity=quantity,
-                )
-                self.dao.session.add(item)
-                new_quantity = quantity
-            else:
-                item.quantity += quantity
-                new_quantity = item.quantity
-        else:
-            available = item.quantity if item is not None else 0
-            if available < quantity:
-                raise ItemQuantityException(
-                    quantity=quantity,
-                    available=available,
-                )
-            new_quantity = available - quantity
-            if new_quantity:
-                item.quantity = new_quantity
-            else:
-                await self.dao.session.delete(item)
+
+        new_quantity, item = await self._change_item_quantity(item, sketch.id, inventory.id, quantity, give)        
 
         await self.dao.flush()
         return AnswerItemChange(

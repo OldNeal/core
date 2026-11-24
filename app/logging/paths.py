@@ -8,6 +8,7 @@ class LogPaths:
     newspaper = logs / PurePath('newspaper/')
     user = logs / PurePath('user/')
     question = logs / PurePath('question/')
+    activtiy = logs / PurePath('activtiy/')
 
     categories = {
         'base':base,
@@ -16,6 +17,7 @@ class LogPaths:
         'newspaper':newspaper,
         'user':user,
         'question':question,
+        'activtiy':activtiy,
     }
 
     @classmethod

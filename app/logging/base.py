@@ -133,6 +133,19 @@ class BotLog:
             'retention':"180 days",
             'compression':"zip",
             } for question_logs in self.question_handlers
+        ] + [
+            {
+            "sink": LogPaths.activtiy / PurePath(f'{activtiy_logs.name.lower()}' + '_{time:YYYY-MM-DD}.log'),
+            'filter':log_filter(activtiy_logs.no),
+            'level':f'{activtiy_logs.name}',
+            'enqueue':True,
+            'format':self.log_format,
+            'catch':True,
+            'serialize':True,
+            'rotation':"10 MB",
+            'retention':"180 days",
+            'compression':"zip",
+            } for activtiy_logs in self.activtiy_handlers
         ]
     
     def create_handlers(self):
@@ -151,6 +164,7 @@ class BotLog:
         self.newspaper_handlers = self.create_levels_newspaper()
         self.user_handlers = self.create_levels_user()
         self.question_handlers = self.create_levels_question()
+        self.activtiy_handlers = self.create_levels_activity()
         return (
             self.base_handlers
             + self.beyonder_handlers
@@ -158,6 +172,7 @@ class BotLog:
             + self.newspaper_handlers
             + self.user_handlers
             + self.question_handlers
+            + self.activtiy_handlers
         )
 
     def create_levels_base(self):
@@ -202,15 +217,20 @@ class BotLog:
     def create_levels_user(self):
         return [
             self.logger.level("USER CREATE", no=51, color="<green>", icon="👤"),
-            self.logger.level("GET ACTIVITY POINTS", no=52, color="<green>", icon="🪙"),
-            self.logger.level("ACTIVITY POINTS ADD", no=53, color="<green>", icon="➕"),
-            self.logger.level("ACTIVITY POINTS DEDUCT", no=54, color="<green>", icon="➖"),
-            self.logger.level("ACTIVITY POINTS RESET", no=55, color="<green>", icon="♻️"),
         ]
 
     def create_levels_question(self):
         return [
             self.logger.level("QUESTION CREATE", no=61, color="<magenta>", icon="❓"),
+            self.logger.level("QUESTION ANSWER", no=61, color="<magenta>", icon="🎯"),
+        ]
+
+    def create_levels_activity(self):
+        return [
+            self.logger.level("GET ACTIVITY POINTS", no=52, color="<green>", icon="🪙"),
+            self.logger.level("ACTIVITY POINTS ADD", no=53, color="<green>", icon="➕"),
+            self.logger.level("ACTIVITY POINTS DEDUCT", no=54, color="<green>", icon="➖"),
+            self.logger.level("ACTIVITY POINTS RESET", no=55, color="<green>", icon="♻️"),
         ]
  
     def decor(self, timer: bool = False, arg: bool = False, logger_kwargs: dict = {}):
@@ -317,6 +337,13 @@ class BotLog:
             'QUESTION CREATE',
             'Создан вопрос',
             **kwargs | {'question_id': question_id, 'user_id': user_id},
+        )
+
+    def question_answer(self, question_id: int, answer_id: int, is_correct: bool, **kwargs):
+        self.logger.log(
+            'QUESTION ANSWER',
+            'Ответили на вопрос',
+            **kwargs | {'question_id': question_id, 'answer_id':answer_id, 'is_correct':is_correct},
         )
         
     def start(self, **kwargs):
