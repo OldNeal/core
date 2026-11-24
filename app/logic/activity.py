@@ -55,7 +55,7 @@ class ActivityLogic(ItemLogic):
             GET_ACTIVITY_POINTS_LIMIT_TTL_MESSAGE, 
             GET_ACTIVITY_POINTS_LIMIT_MESSAGE
         )
-        item = await self.change_activity_points(user, points)
+        points, item = await self.change_activity_points(user, points)
         await self.dao.flush()
         self.botlog.get_activity_points(points, item.quantity, 'награда за сообщения')
         return AnswerActivityPoints(
