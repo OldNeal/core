@@ -11,6 +11,9 @@ class BeyonderService(BaseService):
     
     async def info(self):
         return await self.logic.info()
+
+    async def sistem_info(self):
+        return await self.logic.sistem_info()
     
     async def upseq(self, new_seq: int | None = None, path_name: str | None = None):
         return await self.logic.upseq(new_seq, path_name)

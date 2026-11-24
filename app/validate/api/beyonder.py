@@ -47,6 +47,17 @@ class AnswerBeyonderInfo(AnswerBody):
                 )
         return self
 
+class SequenceInfo(AnswerBaseBody):
+    number: int
+    days: int
+    rsp_factor: int
+    rsp: int
+    total_seconds: int
+
+class AnswerBeyonderSistemInfo(AnswerBaseBody):
+    get_activity_points_limit: int
+    sequences: list[SequenceInfo]
+
 class AnswerTimeInfo(AnswerBeyonderInfo):
     next_upseq: datetime | None
     last_upseq: datetime

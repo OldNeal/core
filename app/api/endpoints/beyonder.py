@@ -7,6 +7,7 @@ from app.validate.api.beyonder import (QueryBody,
                                        AnswerBody,
                                        AnswerBeyonderInfo,
                                        AnswerBeyonderList,
+                                       AnswerBeyonderSistemInfo,
                                        AnswerStudyMethodAction)
 from app.api.depends.session import get_session
 from app.service.beyonder import BeyonderService
@@ -52,6 +53,12 @@ async def beyonder_dowseq(
                  session = Depends(get_session())
                  ):
     return await BeyonderService(session, query.user_id, user_id, query.is_admin).downseq(seq, path_name)
+
+@beyonder_router.get('/sistem/info', response_model=AnswerBeyonderSistemInfo)
+async def beyonder_sistem_info(
+                session = Depends(get_session())
+                ):
+    return await BeyonderService(session).sistem_info()
 
 @beyonder_router.get('/time/info', response_model=AnswerTimeInfo)
 async def beyonder_time_info(

@@ -12,11 +12,13 @@ from app.validate.api.beyonder import (AnswerTimeReplace,
                                        AnswerBody,
                                        AnswerPathInfo,
                                        AnswerStudyMethodAction,
+                                       AnswerBeyonderSistemInfo,
+                                       SequenceInfo,
                                        TimeRedact,
                                        Point,
                                        Points)
-from app.logic.seq import sequences
-from app.logic.activity import ACTIVITY_POINTS_TAG
+from app.logic.seq import sequences, sequence_list
+from app.logic.activity import ACTIVITY_POINTS_TAG, GET_ACTIVITY_POINTS_LIMIT_MESSAGE
 from app.db.models.item import InventoryDB
 
 class BeyonderLogic(BaseLogic):
@@ -67,6 +69,21 @@ class BeyonderLogic(BaseLogic):
                 rsp=user.beyonder.rsp(paths),
             )
         return answer
+
+    async def sistem_info(self):
+        return AnswerBeyonderSistemInfo(
+            get_activity_points_limit=GET_ACTIVITY_POINTS_LIMIT_MESSAGE,
+            sequences=[
+                SequenceInfo(
+                    number=seq.number,
+                    days=seq.days,
+                    rsp_factor=seq.rsp_factor,
+                    rsp=seq.rsp,
+                    total_seconds=seq.total_seconds(),
+                )
+                for seq in sequence_list
+            ],
+        )
 
     async def drink(self, path_name: str | None = None, path_id: int | None = None, seq: int = 9):
         if seq < 9:
