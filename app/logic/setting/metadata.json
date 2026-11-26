@@ -31,8 +31,8 @@
         "name": "Скрыть из топа",
         "group": "privacy",
         "description": "Не показывать пользователя в рейтингах.",
-        "is_redact": true,
-        "is_hidden": false,
+        "is_redact": false,
+        "is_hidden": true,
         "resettable": false,
         "emodzi": "🙈",
         "custom_emodzi_id": null,
@@ -254,9 +254,9 @@
     },
     "organ": {
       "hidden": {
-        "name": "Видимость организации",
+        "name": "Скрыть инфу",
         "group": "main",
-        "description": "Скрывает организацию из общих списков.",
+        "description": "Скрывает инфу о организации.",
         "is_redact": true,
         "is_hidden": false,
         "resettable": false,
