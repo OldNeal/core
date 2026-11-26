@@ -11,7 +11,7 @@ from .item import ItemDontFindException, ItemQuantityException
 from .organ import DontMemberError, ALreadyOwnerError, DontEnterPurposeError, ExistRankError, ExistOrganError, InOneOrganError, ALreadyMemberError, OrganPermissioError, OrganPermissionNewRankError, OrganPermissionPurposeRankError, ClosenOrganError, HiddenOrganError
 from .logs import DontLogFileException, DontHavePermissionException, DontExistCategoryException
 from .newspaper import ExistNewsPaperError, ReaderError, NewsPaperPermissioError
-from .setting import ParametrValidateError, ParametrExistError, RankValidateError
+from .setting import ParametrValidateError, ParametrExistError, RankValidateError, ChoisesValidateError
 
 exceptions: list[type[BaseException]] = [
     SeqDontExistException,
@@ -38,9 +38,10 @@ exceptions: list[type[BaseException]] = [
     ExistRankError, 
     ALreadyOwnerError, 
     DontEnterPurposeError,
-    ParametrValidateError,
     RankValidateError,
     ParametrExistError,
+    ChoisesValidateError,
+    ParametrValidateError,
     SeqBusyException,
     DontLogFileException, 
     DontHavePermissionException, 

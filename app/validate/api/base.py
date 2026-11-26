@@ -17,9 +17,25 @@ class TelegramBody(BaseBody):
     def name(self):
         return self.fullname or self.username
 
+class UserSettingValidate(BaseAPIValidate):
+    hidden_top: bool 
+    get_notify: bool 
+    notify_platform: str
+    notify_type: str
+    use_ephemeral_message: bool
+    use_rich_message: bool = True
+
+    is_ephemeral: bool = False
+    is_send_to_private: bool = False    
+
 class AnswerUserBody(BaseAPIValidate):
     user_id: int
     name: str | None = None
+    emodzi: str | None = None
+    custom_emodzi_id: str | None = None
+    description: str | None = None
+    setting: UserSettingValidate
+
     telegram: TelegramBody | None = None
 
 class QueryBody(BaseAPIValidate):

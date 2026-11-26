@@ -2,7 +2,7 @@ from app.logic.base import BaseLogic
 from app.validate.api.organ import AnswerOrganInfo, AnswerOrganGive, OrganInfo, ForButtons, AnswerAllOrganInfo, AnswerRedactRank, AnswerOrganSetting, AnswerOrganSettingValues, AnswerRedactTitul, AnswerOrganInfoDescription, AnswerOrganInfoMembers, AnswerMemberInfo, OrganSettingDefault, MemberInfo, UserDB
 from app.db.models.organ import MemberDB, OrganDB
 from app.db.models.main import UserDB
-from app.logic.setting.base import OrganSetting
+from app.logic.setting import OrganSetting
 from app.exception.organ import DontMemberError, DontEnterPurposeError, ExistRankError, ALreadyOwnerError, ExistOrganError, InOneOrganError, ALreadyMemberError, OrganPermissioError, OrganPermissionNewRankError, HiddenOrganError, ClosenOrganError, OrganPermissionPurposeRankError
 
 class OrganLogic(BaseLogic):
@@ -33,25 +33,25 @@ class OrganLogic(BaseLogic):
     
     def is_permission(self, user: UserDB, tag: str, to_print: bool = True):
         setting = OrganSetting(user.member.organ.setting)
-        if user.member.rank > setting.permission.get(tag, 0):
+        if user.member.rank > getattr(setting, tag, 0):
             raise OrganPermissioError(rank=user.member.rank, to_print=to_print)
         return user, setting
 
     def is_hidden(self, user: UserDB, organ: OrganDB, to_print: bool = True):
         setting = OrganSetting(organ.setting)
-        if setting.main.get('hidden') and not (user.member and user.member.organ_id == organ.id):
+        if setting.hidden and not (user.member and user.member.organ_id == organ.id):
             raise HiddenOrganError(to_print=to_print)
         return setting
     
     def is_closen(self, organ: OrganDB, to_print: bool = True):
         setting = OrganSetting(organ.setting)
-        if setting.main.get('closen'):
+        if setting.closen:
             raise ClosenOrganError(to_print=to_print)
         return setting
 
     def is_exist_rank(self, rank: int | None, organ: OrganDB, to_print: bool = True):
         setting = OrganSetting(organ.setting)
-        if rank and not(setting.main.get('min_rank', 9) >= rank >= setting.main.get('max_rank', 0)):
+        if rank and not(setting.MAX_RANK >= rank >= setting.MIN_RANK):
             raise ExistRankError(rank=rank, to_print=to_print)
         return setting
         
@@ -277,7 +277,7 @@ class OrganLogic(BaseLogic):
         user = await self.check_is_not_member()
         organ = await self.check_exist_organ(self.organ_id)
         setting = self.is_closen(organ)
-        user.member = MemberDB(user_id=user.id, organ_id=organ.id, rank=setting.main.get('start_rank'))
+        user.member = MemberDB(user_id=user.id, organ_id=organ.id, rank=setting.start_rank)
         await self.dao.flush()
         self.log_kwargs = {'organ_name':organ.name, 'organ_id':organ.id}
         self.botlog.organ_login(**self.log_kwargs)
@@ -297,7 +297,7 @@ class OrganLogic(BaseLogic):
         user = await self.check_is_not_member()
         organ = await self.dao.organ.add({'name':name})
         setting = OrganSetting(organ.setting)
-        user.member = MemberDB(user_id=user.id, organ_id=organ.id, rank=setting.main.get('start_rank'))
+        user.member = MemberDB(user_id=user.id, organ_id=organ.id, rank=setting.start_rank)
         await self.dao.flush()
         self.log_kwargs = {'organ_name':organ.name, 'organ_id':organ.id}
         self.botlog.organ_create(**self.log_kwargs)

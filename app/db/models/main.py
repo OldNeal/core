@@ -23,7 +23,12 @@ class TgChatDB(Base):
 class UserDB(Base):
     tg_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, default=None)
     _name: Mapped[str | None] = mapped_column(name='name', default=None)
+    emodzi: Mapped[str | None] = mapped_column(default=None)
+    custom_emodzi_id: Mapped[str | None] = mapped_column(default=None)
+    description: Mapped[str | None] = mapped_column(default=None)
+    _setting: Mapped[dict | None] = mapped_column(JSON, name='setting', default={}, nullable=True)
     is_ban: Mapped[bool] = mapped_column(default=False)
+    
     tg_user: Mapped[TgUserDB | None] = relationship(TgUserDB, uselist=False, lazy='joined', primaryjoin="foreign(TgUserDB.tg_id) == UserDB.tg_id", cascade='all')
     beyonder: Mapped[BeyonderDB | None] = relationship('BeyonderDB', uselist=False, lazy='joined', back_populates='user', cascade='all, delete-orphan')
     member: Mapped[MemberDB | None] = relationship('MemberDB', uselist=False, lazy='joined', back_populates='user', cascade='all, delete-orphan')
@@ -34,6 +39,20 @@ class UserDB(Base):
     @property
     def name(self):
         return self.tg_user.fullname if self._name is None and self.tg_user else self._name
+
+    @name.setter
+    def name(self, value: str | None):
+        self._name = value
+        return value
+
+    @property
+    def setting(self):
+        return self._setting or {}
+
+    @setting.setter
+    def setting(self, value: dict):
+        self._setting = value
+        return value
 
     @property
     def news_papers(self):

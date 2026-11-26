@@ -57,7 +57,8 @@ async def handle_errors(request, exc):
 
 @app.exception_handler(Exception)
 async def handle_any_error(request, exc):
-    response = BaseExceptionResponse(message='Unknown exception', status_code=500, headers={})
+    botlog.logger.error(exc)
+    response = BaseExceptionResponse(message='Unknown exception', status_code=500, headers={}, kwargs={'exc':str(exc)})
     return JSONResponse(status_code=response.status_code, content=response.model_dump())
 
 use_route_names_as_operation_ids(app)
