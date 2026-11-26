@@ -5,6 +5,7 @@ from app.validate.logic.base import BaseLogicValidate
 
 SettingGroupTag = Literal['main', 'privacy', 'permission', 'appearance']
 SettingDependencyOperator = Literal['equals', 'not_equals', 'in', 'not_in']
+SettingValueType = Literal['str', 'str-int']
 
 
 class SettingDependency(BaseLogicValidate):
@@ -17,7 +18,7 @@ class SettingDependency(BaseLogicValidate):
 class SettingSubparameterMetadata(BaseLogicValidate):
     tag: str
     name: str
-    type: str = 'str'
+    type: SettingValueType = 'str'
     default_value: Any
     emodzi: str | None = None
     custom_emodzi_id: str | None = None
@@ -34,6 +35,7 @@ class SettingParametrMetadata(BaseLogicValidate):
     name: str
     group: SettingGroupTag
     type: str
+    value_type: SettingValueType | None = None
     emodzi: str | None = None
     custom_emodzi_id: str | None = None
     description: str | None = None

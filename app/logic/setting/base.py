@@ -171,6 +171,16 @@ class BaseSetting(BaseLogicValidate):
 
     @staticmethod
     def _validate_metadata_constraints(tag: str, value, metadata: dict) -> None:
+        value_type = metadata.get('value_type') or metadata.get('type')
+        if value_type == 'str-int' and (
+            not isinstance(value, str) or re.fullmatch(r'[0-9]+', value) is None
+        ):
+            raise ParametrValidateError(
+                parametr_tag=tag,
+                value=value,
+                parametr_type='строкой только из цифр',
+            )
+
         allowed_values = metadata.get('allowed_values')
         if allowed_values is not None and value not in allowed_values:
             raise ChoisesValidateError(
