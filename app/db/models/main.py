@@ -52,7 +52,7 @@ class UserDB(Base):
     @setting.setter
     def setting(self, value: dict):
         self._setting = value
-        return value
+        return {'name':self.name, 'emodzi':self.emodzi, 'custom_emodzi_id':self.custom_emodzi_id, 'description':self.description} | self._setting
 
     @property
     def news_papers(self):
