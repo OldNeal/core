@@ -205,7 +205,7 @@ class BeyonderLogic(BaseLogic):
         remaining_time = user.beyonder.upseq_date
         is_upseq = True
         if user.beyonder.seq_number == 1:
-            if await self.dao.beyonder.query_by_path_id(user.beyonder.seq.path.id, user.beyonder.seq - 1):
+            if await self.dao.beyonder.query_by_path_id(user.beyonder.seq.path.id, user.beyonder.seq_number - 1):
                 is_upseq = False
         if user.beyonder.seq_number == 0:
             if await self.dao.beyonder.query_ga_by_ga_id(user.beyonder.seq.path.ga_id):
