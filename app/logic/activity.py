@@ -9,7 +9,7 @@ from app.logic.item import ItemLogic
 ACTIVITY_POINTS_TAG = 'activity_point'
 ACTIVITY_POINTS_MESSAGE = 10
 GET_ACTIVITY_POINTS_LIMIT_MESSAGE = 1200
-ACTIVITY_POINTS_QUESTION = 150
+ACTIVITY_POINTS_QUESTION = 100
 
 
 class ActivityLogic(ItemLogic):

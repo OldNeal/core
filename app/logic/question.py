@@ -29,7 +29,7 @@ from app.exception.question import (
 )
 
 MAX_DAILY_QUESTION_ANSWERS = 20
-CREATE_QUESTION_ACTIVITY_POINT = 200
+CREATE_QUESTION_ACTIVITY_POINT = 120
 
 class QuestionLogic(ActivityLogic):
     async def check_erudite(self, user_id: int | None):
