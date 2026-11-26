@@ -4,8 +4,8 @@ from app.validate.api.base import AnswerBaseBody, AnswerBody, BaseAPIValidate, P
 class QustionBase(BaseAPIValidate):
     body: str
     description: str | None = None
-    difficulty: int = Field(default=1, ge=1, le=10)
-    tags: list[str] = Field(default_factory=list)
+    difficulty: int = Field(5, default=1, ge=1, le=10)
+    tags: list[str] = Field([], default_factory=list)
 
 class QuestionCreate(QustionBase):
     correct_answers: list[str]
