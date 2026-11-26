@@ -14,7 +14,7 @@ from app.validate.api.base import ReaderInfo
 from app.db.models.newspaper import NewsPaperDB, ReaderDB, EDITOR_RANK, READER_RANK, AUTHOR_RANK
 from app.db.models.main import UserDB
 from app.exception.newspaper import ExistNewsPaperError, AlreadyReaderError, NewsPaperPermissioError, ReaderError
-from app.logic.setting.base import NewsPaperSetting
+from app.logic.setting import NewsPaperSetting
 from app.validate.api.organ import OrganSettingDefault
 from app.validate.api.newspaper import AnswerNewsPaperSetting, AnswerNewsPaperSettingValues
 
@@ -53,7 +53,7 @@ class NewsPaperLogic(BaseLogic):
         reader = user.readers_by_news_paper_id.get(news_paper_id)
         if reader and (permission_rank is not None or setting_parametr is not None):
             if permission_rank is None and setting_parametr:
-                permission_rank = NewsPaperSetting(news_paper.setting).values.get(setting_parametr)
+                permission_rank = getattr(NewsPaperSetting(news_paper.setting), setting_parametr)
             if permission_rank is None or reader.rank > permission_rank:
                 raise NewsPaperPermissioError()
         return user, news_paper

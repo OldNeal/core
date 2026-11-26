@@ -9,6 +9,18 @@ class MainService(BaseService):
     async def info(self):
         return await self.logic.info()
 
+    async def settings(self):
+        return await self.logic.settings()
+
+    async def settings_values(self):
+        return await self.logic.settings_values()
+
+    async def settings_redact(self, parametrs: dict):
+        return await self.logic.settings_redact(parametrs)
+
+    async def settings_default(self, default):
+        return await self.logic.settings_default(default)
+
     async def update(self, user):
         return await self.logic.update(user)
     

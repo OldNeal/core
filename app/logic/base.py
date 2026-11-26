@@ -1,4 +1,4 @@
-from app.db.dao.models import DAO
+from app.db.dao.models import DAO, UserDB
 from app.exception.base import PermissionException, UserDontFind
 from app.exception.beyonder import DontBeyonderException
 from app.validate.api.base import TelegramBody, AnswerUserBody
@@ -6,7 +6,8 @@ from app.logging.base import botlog
 from app.validate.api.base import Page
 from app.exception.base import PageDontFindError
 import math
-from app.redis.store import Store
+from app.redis.store import store
+from app.logic.setting import UserSetting
 
 class BaseLogic:
     def __init__(self, session, user_id: int | None = None, purpose_user_id: int | None = None, is_admin: bool = False):
@@ -16,8 +17,7 @@ class BaseLogic:
         self.is_admin = is_admin
         self.botlog = botlog.bind(purpose_user_id=purpose_user_id)
         self.log_kwargs = {}
-
-        self.store = Store()
+        self.store = store
     
     def check_is_not_none(self, *objs):
         for obj in objs:
@@ -57,10 +57,14 @@ class BaseLogic:
         user = await self.get_user(user_id)
         return self.return_query_body(user)
         
-    def return_query_body(self, user):
+    def return_query_body(self, user: UserDB):
         return AnswerUserBody(
             user_id=user.id,
             name=user.name,
+            emodzi=user.emodzi,
+            custom_emodzi_id=user.custom_emodzi_id,
+            description=user.description,
+            setting=UserSetting(user.setting).model_dump_response(),
             telegram=TelegramBody(
                 tg_id=user.tg_id,
                 username=user.tg_user.username,

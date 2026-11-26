@@ -8,13 +8,22 @@ class OrganDB(Base):
     custom_emodzi_id: Mapped[str | None] = mapped_column(default=None)
     description: Mapped[str | None] = mapped_column(default=None)
     members: Mapped[list['MemberDB']] = relationship('MemberDB', uselist=True, lazy='select', back_populates='organ', cascade='all, delete-orphan')
-    setting: Mapped[dict] = mapped_column(JSON, default={})
+    _setting: Mapped[dict] = mapped_column(JSON, name='setting', default={})
             
     @property
     def owner(self):
         for member in self.members:
             if member.rank == 0:
                 return member
+
+    @property
+    def setting(self):
+        return {'name':self.name, 'emodzi':self.emodzi, 'custom_emodzi_id':self.custom_emodzi_id, 'description':self.description} | self._setting
+
+    @setting.setter
+    def setting(self, value: dict):
+        self._setting = value
+        return {'name':self.name, 'emodzi':self.emodzi, 'custom_emodzi_id':self.custom_emodzi_id, 'description':self.description} | self._setting
 
     @classmethod
     def default_rank_name(cls):

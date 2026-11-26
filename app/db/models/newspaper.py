@@ -12,13 +12,22 @@ class NewsPaperDB(Base):
     custom_emodzi_id: Mapped[str | None] = mapped_column(default=None)
     description: Mapped[str | None] = mapped_column(default=None)
     readers: Mapped[list['ReaderDB']] = relationship('ReaderDB', uselist=True, lazy='select', back_populates='news_paper', cascade='all, delete-orphan')
-    setting: Mapped[dict] = mapped_column(JSON, default={})
+    _setting: Mapped[dict] = mapped_column(JSON, name='setting', default={})
 
     @property
     def owner(self):
         for reader in self.readers:
             if reader.rank == AUTHOR_RANK:
                 return reader
+
+    @property
+    def setting(self):
+        return {'name':self.name, 'emodzi':self.emodzi, 'custom_emodzi_id':self.custom_emodzi_id, 'description':self.description} | self._setting
+
+    @setting.setter
+    def setting(self, value: dict):
+        self._setting = value
+        return {'name':self.name, 'emodzi':self.emodzi, 'custom_emodzi_id':self.custom_emodzi_id, 'description':self.description} | self._setting
 
     @classmethod
     def default_rank_name(cls):

@@ -2,8 +2,59 @@ from app.logic.base import BaseLogic
 from app.validate.api.base import AnswerBaseInfo, QueryUserUpdate, AnswerUsersBody
 from app.db.models.main import TgUserDB
 from app.exception.base import ParametrValidationException, UserDontFind
+from app.logic.setting import UserSetting
+from app.validate.api.user import AnswerUserSetting, AnswerUserSettingValues, UserSettingDefault
 
 class MainLogic(BaseLogic):
+    async def settings(self):
+        user = await self.get_user()
+        setting = UserSetting(user.setting)
+        return AnswerUserSetting(user=self.return_query_body(user), settings=setting.validate)
+
+    async def settings_values(self):
+        user = await self.get_user()
+        setting = UserSetting(user.setting)
+        return AnswerUserSettingValues(user=self.return_query_body(user), values=setting.values)
+
+    async def settings_redact(self, parametrs: dict):
+        user = await self.get_user()
+        setting = UserSetting(user.setting)
+        setting.update(parametrs)
+        user.setting = setting.model_dump_db()
+        self.dao.user.update_obj(user, user.setting)
+        await self.dao.flush()
+        return AnswerUserSetting(user=self.return_query_body(user), settings=setting.validate)
+
+    async def settings_default(self, default: UserSettingDefault):
+        user = await self.get_user()
+        setting = UserSetting(user.setting)
+        if default.is_all:
+            setting.to_default()
+            user.setting = {}
+            user.name = None
+            user.emodzi = None
+            user.custom_emodzi_id = None
+            user.description = None
+        elif default.group:
+            user.setting = setting.to_default(default.group)
+            if default.group == 'appearance':
+                user.name = None
+                user.emodzi = None
+                user.custom_emodzi_id = None
+                user.description = None
+        elif default.parametr:
+            if default.parametr in UserSetting._all_fields():
+                user.setting = dict(user.setting)
+                user.setting.pop(default.parametr, None)
+            elif default.parametr in {'name', 'emodzi', 'custom_emodzi_id', 'description'}:
+                setattr(user, default.parametr, None)
+            else:
+                setting.check_tag({default.parametr: None})
+        else:
+            raise ParametrValidationException('Укажите параметр, группу или is_all')
+        await self.dao.flush()
+        return AnswerUserSetting(user=self.return_query_body(user), settings=setting.validate)
+
     async def info(self):
         user =  await self.get_user()
         body = self.return_query_body(user)

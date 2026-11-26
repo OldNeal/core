@@ -583,7 +583,7 @@ class NewsPaperDAO(BaseDAO[NewsPaperDB]):
         )
         if editors_only:
             editor_rank = func.coalesce(
-                self.model.setting['editor_rank'].as_integer(),
+                self.model._setting['editor_rank'].as_integer(),
                 EDITOR_RANK,
             )
             query = query.where(ReaderDB.rank <= editor_rank)
