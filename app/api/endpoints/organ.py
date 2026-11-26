@@ -105,6 +105,15 @@ async def organ_create(
                        ):
     return await OrganService(session, query.user_id).create(name)
 
+
+@organ_router.patch('/delete', response_model=dict)
+async def organ_delete(
+                      query: QueryBody,
+                      id: int = Query(description='ID организации'),
+                      session=Depends(get_session())
+                      ):
+    return await OrganService(session, query.user_id, organ_id=id).delete()
+
 @organ_router.post('/settings', response_model=AnswerOrganSetting)
 async def organ_settings(
                       query: QueryBody, 

@@ -1,8 +1,11 @@
+from pydantic import Field
 from app.validate.api.base import AnswerBaseBody, AnswerBody, BaseAPIValidate, Page, QueryBody
 
 class QustionBase(BaseAPIValidate):
     body: str
     description: str | None = None
+    difficulty: int = Field(default=1, ge=1, le=10)
+    tags: list[str] = Field(default_factory=list)
 
 class QuestionCreate(QustionBase):
     correct_answers: list[str]
@@ -11,6 +14,22 @@ class QuestionCreate(QustionBase):
 class QueryQuestionCreate(QueryBody):
     purpose_user_id: int | None = None
     question: QuestionCreate
+
+class QuestionAnswerUpdate(BaseAPIValidate):
+    answer_id: int | None = None
+    body: str
+    is_correct: bool
+
+class QuestionUpdate(BaseAPIValidate):
+    question_id: int
+    name: str | None = None
+    description: str | None = None
+    difficulty: int | None = Field(default=None, ge=1, le=10)
+    tags: list[str] | None = None
+    answers: list[QuestionAnswerUpdate] | None = None
+
+class QueryQuestionUpdate(QueryBody):
+    question: QuestionUpdate
 
 class QuestionAnswer(BaseAPIValidate):
     answer_id: int

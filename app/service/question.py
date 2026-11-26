@@ -1,6 +1,6 @@
 from app.logic.question import QuestionLogic
 from app.service.base import BaseService
-from app.validate.api.question import QueryQuestionCreate
+from app.validate.api.question import QueryQuestionCreate, QueryQuestionUpdate
 
 
 class QuestionService(BaseService):
@@ -10,6 +10,12 @@ class QuestionService(BaseService):
 
     async def create_question(self, data: QueryQuestionCreate):
         return await self.logic.create_question(data)
+
+    async def update_question(self, data: QueryQuestionUpdate):
+        return await self.logic.update_question(data)
+
+    async def delete_question(self, question_id: int):
+        return await self.logic.delete_question(question_id)
 
     async def answer_the_question(self, question_id: int, answer_id: int):
         return await self.logic.answer_the_question(question_id, answer_id)

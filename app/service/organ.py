@@ -38,6 +38,9 @@ class OrganService(BaseService):
 
     async def create(self, name: str):
         return await self.logic.create(name)
+
+    async def delete(self):
+        return await self.logic.delete()
     
     async def settings(self):
         return await self.logic.settings()

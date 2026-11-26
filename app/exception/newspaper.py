@@ -18,3 +18,7 @@ class ReaderError(NewsPaperException):
 class AlreadyReaderError(NewsPaperException):
     default_message = 'Вы уже читатель этой газеты'
     status_code = 474
+
+class NewsPaperHasOtherReadersError(NewsPaperException):
+    default_message = 'Удалить газету можно, только если владелец — единственный читатель'
+    status_code = 477

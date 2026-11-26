@@ -110,6 +110,7 @@ class ForButtons(AnswerBaseBody):
     is_capture: bool = False
     is_give: bool = False
     is_news: bool = False
+    is_delete: bool = False
     
 class AnswerMain(AnswerBaseBody):
     message: str

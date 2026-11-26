@@ -13,6 +13,7 @@ from app.validate.api.question import (
     AnswerUserQuestionStatistics,
     AnswerQuestionLimit,
     QueryQuestionCreate,
+    QueryQuestionUpdate,
 )
 
 question_router = APIRouter(prefix='/question', tags=['question'], responses=get_exception_codes(types=['question']))
@@ -24,6 +25,27 @@ async def question_create(
     session=Depends(get_session()),
 ):
     return await QuestionService(session, user_id=query.user_id, purpose_user_id=query.purpose_user_id, is_admin=query.is_admin).create_question(query)
+
+
+@question_router.post('/update', response_model=AnswerQuestion)
+async def question_update(
+    query: QueryQuestionUpdate,
+    session=Depends(get_session()),
+):
+    return await QuestionService(
+        session,
+        user_id=query.user_id,
+        is_admin=query.is_admin,
+    ).update_question(query)
+
+
+@question_router.patch('/delete', response_model=dict)
+async def question_delete(
+    query: QueryBody,
+    question_id: int = Query(description='ID вопроса'),
+    session=Depends(get_session()),
+):
+    return await QuestionService(session, user_id=query.user_id, is_admin=query.is_admin).delete_question(question_id)
 
 
 @question_router.post('/answer', response_model=AnswerQuestionAnswer)

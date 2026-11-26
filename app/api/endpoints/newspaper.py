@@ -121,6 +121,15 @@ async def news_paper_create(
     return await NewsPaperService(session, query.user_id).create(name)
 
 
+@news_paper_router.patch("/delete", response_model=dict)
+async def news_paper_delete(
+    query: QueryBody,
+    id: int = Query(description="ID газеты"),
+    session=Depends(get_session()),
+):
+    return await NewsPaperService(session, query.user_id, news_paper_id=id).delete()
+
+
 @news_paper_router.put("/subscribe", response_model=AnswerNewsPaperInfo)
 async def news_paper_subscribe(
     query: QueryBody,

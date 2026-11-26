@@ -13,7 +13,7 @@ from app.validate.api.newspaper import (
 from app.validate.api.base import ReaderInfo
 from app.db.models.newspaper import NewsPaperDB, ReaderDB, EDITOR_RANK, READER_RANK, AUTHOR_RANK
 from app.db.models.main import UserDB
-from app.exception.newspaper import ExistNewsPaperError, AlreadyReaderError, NewsPaperPermissioError, ReaderError
+from app.exception.newspaper import ExistNewsPaperError, AlreadyReaderError, NewsPaperPermissioError, ReaderError, NewsPaperHasOtherReadersError
 from app.logic.setting import NewsPaperSetting
 from app.validate.api.organ import OrganSettingDefault
 from app.validate.api.newspaper import AnswerNewsPaperSetting, AnswerNewsPaperSettingValues
@@ -58,6 +58,16 @@ class NewsPaperLogic(BaseLogic):
                 raise NewsPaperPermissioError()
         return user, news_paper
 
+    async def delete(self):
+        user, news_paper = await self.check_permission(self.news_paper_id, AUTHOR_RANK)
+        readers = await news_paper.awaitable_attrs.readers
+        if len(readers) != 1:
+            raise NewsPaperHasOtherReadersError()
+        if readers[0].user_id != user.id or readers[0].rank != AUTHOR_RANK:
+            raise NewsPaperPermissioError()
+        await self.dao.news_paper.delete_one_by_id(news_paper.id)
+        return {"deleted": True}
+
     async def return_reader_info(self, reader: ReaderDB, news_paper: NewsPaperDB, for_buttons: ForButtons | None = None):
         user = await reader.awaitable_attrs.user
         return AnswerReaderInfo(
@@ -93,6 +103,11 @@ class NewsPaperLogic(BaseLogic):
         purpose_reader_is_editor = news_paper.reader_user_ids.get(purpose.id).is_editor if purpose else False
         is_author = reader is not None and reader.is_author
         is_editor = reader is not None and reader.is_editor
+        can_delete = (
+            is_author
+            and len(news_paper.readers) == 1
+            and news_paper.readers[0].user_id == user.id
+        )
         return ForButtons(
             is_reader=reader is not None,
             news_paper_id=news_paper.id,
@@ -100,6 +115,7 @@ class NewsPaperLogic(BaseLogic):
             is_redact_rank=is_author,
             is_capture=reader is not None and news_paper.owner is None,
             is_give=is_author,
+            is_delete=can_delete,
             is_news=is_editor,
             purpose_is_editor=purpose_reader_is_editor
         )

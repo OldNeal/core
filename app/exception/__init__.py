@@ -8,9 +8,9 @@ from .question import (
     QuestionDailyLimitException,
 )
 from .item import ItemDontFindException, ItemQuantityException
-from .organ import DontMemberError, ALreadyOwnerError, DontEnterPurposeError, ExistRankError, ExistOrganError, InOneOrganError, ALreadyMemberError, OrganPermissioError, OrganPermissionNewRankError, OrganPermissionPurposeRankError, ClosenOrganError, HiddenOrganError
+from .organ import DontMemberError, ALreadyOwnerError, DontEnterPurposeError, ExistRankError, ExistOrganError, InOneOrganError, ALreadyMemberError, OrganPermissioError, OrganPermissionNewRankError, OrganPermissionPurposeRankError, ClosenOrganError, HiddenOrganError, OrganHasOtherMembersError
 from .logs import DontLogFileException, DontHavePermissionException, DontExistCategoryException
-from .newspaper import ExistNewsPaperError, ReaderError, NewsPaperPermissioError
+from .newspaper import ExistNewsPaperError, ReaderError, NewsPaperPermissioError, NewsPaperHasOtherReadersError
 from .setting import ParametrValidateError, ParametrExistError, RankValidateError, ChoisesValidateError
 
 exceptions: list[type[BaseException]] = [
@@ -38,6 +38,7 @@ exceptions: list[type[BaseException]] = [
     ExistRankError, 
     ALreadyOwnerError, 
     DontEnterPurposeError,
+    OrganHasOtherMembersError,
     RankValidateError,
     ParametrExistError,
     ChoisesValidateError,
@@ -49,6 +50,7 @@ exceptions: list[type[BaseException]] = [
     ExistNewsPaperError,
     ReaderError,
     NewsPaperPermissioError,
+    NewsPaperHasOtherReadersError,
     QuestionDontFindException,
     AnswerDontFindException,
     QuestionAlreadyAnsweredException,

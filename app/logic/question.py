@@ -15,6 +15,7 @@ from app.validate.api.question import (
     QuestionAnswer,
     QuestionAnswerStatistics,
     QueryQuestionCreate,
+    QueryQuestionUpdate,
     UserQuestionStatistics
 )
 from app.db.models.question import AnswerQuestionDB, EruditeDB, QuestionDB, ResultsQuestionDB
@@ -72,6 +73,8 @@ class QuestionLogic(ActivityLogic):
             question_id=question.id,
             body=question.body,
             description=question.description,
+            difficulty=question.difficulty,
+            tags=question.tags or [],
             answers=[
                 QuestionAnswer(
                     answer_id=answer.id,
@@ -92,18 +95,20 @@ class QuestionLogic(ActivityLogic):
         user = await self.check_erudite(self.check_is_not_none(self.purpose_user_id, self.user_id))
         question = QuestionDB(
             body=data.question.body,
-            description=data.question.description
+            description=data.question.description,
+            difficulty=data.question.difficulty,
+            tags=data.question.tags,
         )
         await user.player.erudite.awaitable_attrs.questions
         user.player.erudite.questions.append(question)
         question.answers.extend([
-            AnswerQuestionDB(
-                body=answer, 
-                is_correct=True) for answer in data.question.correct_answers])
+            AnswerQuestionDB(body=answer, is_correct=True)
+            for answer in data.question.correct_answers
+        ])
         question.answers.extend([
-            AnswerQuestionDB(
-                body=answer, 
-                is_correct=False) for answer in data.question.incorrect_answers])
+            AnswerQuestionDB(body=answer, is_correct=False)
+            for answer in data.question.incorrect_answers
+        ])
         activity_points, item = await self.change_activity_points(user, CREATE_QUESTION_ACTIVITY_POINT)
         await self.dao.flush()
         self.botlog.question_create(question.id, user.id)
@@ -113,6 +118,65 @@ class QuestionLogic(ActivityLogic):
             question=self.question_body(question, show_correct=True),
             activity_points=activity_points
         )
+
+    async def update_question(self, data: QueryQuestionUpdate):
+        update = data.question
+        question = await self.check_question(update.question_id)
+        user = await self.get_user(self.user_id)
+        if not self.is_admin:
+            await user.awaitable_attrs.player
+            if user.player is None:
+                raise PermissionException()
+            await user.player.awaitable_attrs.erudite
+            if user.player.erudite is None or user.player.erudite.id != question.author_id:
+                raise PermissionException()
+
+        fields = update.model_fields_set
+        if 'name' in fields and update.name is not None:
+            question.body = update.name
+        if 'description' in fields:
+            question.description = update.description
+        if update.difficulty is not None:
+            question.difficulty = update.difficulty
+        if update.tags is not None:
+            question.tags = update.tags
+        if update.answers is not None:
+            current_answers = {answer.id: answer for answer in question.answers}
+            updated_answers = []
+            seen_ids = set()
+            for answer_data in update.answers:
+                if answer_data.answer_id is None:
+                    answer = AnswerQuestionDB(
+                        body=answer_data.body,
+                        is_correct=answer_data.is_correct,
+                    )
+                else:
+                    answer = current_answers.get(answer_data.answer_id)
+                    if answer is None or answer_data.answer_id in seen_ids:
+                        raise AnswerDontFindException()
+                    seen_ids.add(answer_data.answer_id)
+                    answer.body = answer_data.body
+                    answer.is_correct = answer_data.is_correct
+                updated_answers.append(answer)
+            question.answers = updated_answers
+        await self.dao.flush()
+        return AnswerQuestion(
+            user=self.return_query_body(user),
+            purpose=self.return_query_body(user),
+            question=self.question_body(question, show_correct=True),
+        )
+
+    async def delete_question(self, question_id: int):
+        question = await self.check_question(question_id)
+        user = await self.get_user(self.user_id)
+        await user.awaitable_attrs.player
+        if user.player is None:
+            raise PermissionException()
+        await user.player.awaitable_attrs.erudite
+        if user.player.erudite is None or user.player.erudite.id != question.author_id:
+            raise PermissionException()
+        await self.dao.question.delete_one_by_id(question.id)
+        return {"deleted": True}
 
     async def answer_the_question(self, question_id: int, answer_id: int):
         question = await self.check_question(question_id)
@@ -295,5 +359,3 @@ class QuestionLogic(ActivityLogic):
                 accuracy=accuracy
             )
         )
-
-        

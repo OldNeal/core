@@ -50,3 +50,7 @@ class ALreadyOwnerError(OrganException):
 class DontEnterPurposeError(OrganException):
     default_message = 'Вы не указали участника'
     status_code = 469
+
+class OrganHasOtherMembersError(OrganException):
+    default_message = 'Удалить организацию можно, только если владелец — единственный участник'
+    status_code = 476

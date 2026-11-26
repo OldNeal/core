@@ -3,7 +3,7 @@ from app.validate.api.organ import AnswerOrganInfo, AnswerOrganGive, OrganInfo, 
 from app.db.models.organ import MemberDB, OrganDB
 from app.db.models.main import UserDB
 from app.logic.setting import OrganSetting
-from app.exception.organ import DontMemberError, DontEnterPurposeError, ExistRankError, ALreadyOwnerError, ExistOrganError, InOneOrganError, ALreadyMemberError, OrganPermissioError, OrganPermissionNewRankError, HiddenOrganError, ClosenOrganError, OrganPermissionPurposeRankError
+from app.exception.organ import DontMemberError, DontEnterPurposeError, ExistRankError, ALreadyOwnerError, ExistOrganError, InOneOrganError, ALreadyMemberError, OrganPermissioError, OrganPermissionNewRankError, HiddenOrganError, ClosenOrganError, OrganPermissionPurposeRankError, OrganHasOtherMembersError
 
 class OrganLogic(BaseLogic):
     def __init__(self, session, user_id: int | None = None, purpose_user_id: int | None = None, organ_id: int | None = None, is_admin: bool = False):
@@ -169,7 +169,17 @@ class OrganLogic(BaseLogic):
             )
 
     async def return_for_buttons(self, user: UserDB, organ_id: int | None = None):
-        owner = await self.get_owner(organ_id or self.organ_id)
+        organ_id = organ_id or self.organ_id
+        owner = await self.get_owner(organ_id)
+        organ = await self.check_exist_organ(organ_id)
+        members = await organ.awaitable_attrs.members
+        can_delete = (
+            user.member is not None
+            and user.member.organ_id == organ.id
+            and user.member.rank == 0
+            and len(members) == 1
+            and members[0].user_id == user.id
+        )
         return ForButtons(
                 is_member=self.boolean(user, func=self.is_member),
                 organ_id=user.member.organ_id if user.member else organ_id,
@@ -178,7 +188,8 @@ class OrganLogic(BaseLogic):
                 is_redact_titul=self.boolean(user, 'redact_titul', func=self.is_permission),
                 is_kick=self.boolean(user, 'kick', func=self.is_permission),
                 is_capture=self.boolean(owner, func=self.is_capture),
-                is_give=self.boolean(user, func=self.is_owner)
+                is_give=self.boolean(user, func=self.is_owner),
+                is_delete=can_delete,
             )
 
     async def return_organs_info(self, organs: list[OrganDB]):
@@ -302,6 +313,19 @@ class OrganLogic(BaseLogic):
         self.log_kwargs = {'organ_name':organ.name, 'organ_id':organ.id}
         self.botlog.organ_create(**self.log_kwargs)
         return await self.return_organ_info(user, organ)
+
+    async def delete(self):
+        user = await self.check_is_member(self.user_id)
+        organ = await self.check_exist_organ(self.organ_id)
+        members = await organ.awaitable_attrs.members
+        if user.member.organ_id != organ.id or user.member.rank != 0:
+            raise OrganPermissioError()
+        if len(members) != 1:
+            raise OrganHasOtherMembersError()
+        if members[0].user_id != user.id:
+            raise OrganPermissioError()
+        await self.dao.organ.delete_one_by_id(organ.id)
+        return {"deleted": True}
  
     async def settings(self):
         user, setting = await self.check_permission('redact_setting')
