@@ -19,7 +19,7 @@ class SettingSubparameterMetadata(BaseLogicValidate):
     tag: str
     name: str
     type: SettingValueType = 'str'
-    default_value: Any
+    default_value: Any = None
     emodzi: str | None = None
     custom_emodzi_id: str | None = None
     description: str | None = None
@@ -85,3 +85,4 @@ class SettingGroupValidate(SettingGroupMetadata):
 
 class OrganSettingValidate(BaseLogicValidate):
     groups: list[SettingGroupValidate]
+
