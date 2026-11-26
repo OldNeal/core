@@ -659,6 +659,8 @@ class QuestionDAO(BaseDAO[QuestionDB]):
     async def search_paginated(self, value: str, page: int | None = None, per_page: int = 5):
         search_value = value.strip().lower()
         query = self._questions_query().where(
+            self.model.is_hidden.is_(False),
+            self.model.is_deleted.is_(False),
             or_(
                 func.lower(self.model.body).contains(search_value, autoescape=True),
                 func.lower(func.coalesce(self.model.description, '')).contains(
@@ -670,7 +672,10 @@ class QuestionDAO(BaseDAO[QuestionDB]):
         return await self.paginate(query, page, per_page)
 
     async def find_all_paginated(self, filters: dict | None = None, page: int | None = None, per_page: int = 5):
-        query = self._questions_query().filter_by(**(filters or {}))
+        query = self._questions_query().where(
+            self.model.is_hidden.is_(False),
+            self.model.is_deleted.is_(False),
+        ).filter_by(**(filters or {}))
         return await self.paginate(query, page, per_page)
 
     async def find_for_user_paginated(self, user_id: int, page: int | None = None, per_page: int = 5):
@@ -678,7 +683,10 @@ class QuestionDAO(BaseDAO[QuestionDB]):
             self._questions_query()
             .join(EruditeDB, self.model.author_id == EruditeDB.id)
             .join(PlayerDB, EruditeDB.player_id == PlayerDB.id)
-            .where(PlayerDB.user_id == user_id)
+            .where(
+                PlayerDB.user_id == user_id,
+                self.model.is_deleted.is_(False),
+            )
         )
         return await self.paginate(query, page, per_page)
 
@@ -741,6 +749,8 @@ class QuestionDAO(BaseDAO[QuestionDB]):
         query = (
             self._questions_query()
             .where(
+                self.model.is_hidden.is_(False),
+                self.model.is_deleted.is_(False),
                 correct_answers_count >= correct_count,
                 incorrect_answers_count >= incorrect_count,
                 ~recent_incorrect_answer,

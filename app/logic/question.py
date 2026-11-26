@@ -49,6 +49,11 @@ class QuestionLogic(ActivityLogic):
             raise QuestionDontFindException()
         return question
 
+    @staticmethod
+    def ensure_question_active(question: QuestionDB):
+        if question.is_hidden or question.is_deleted:
+            raise QuestionDontFindException()
+
     async def check_daily_question_limit(self, user_id: int):
         taken_today = await self.store.question.get_daily_taken_questions(user_id)
         if taken_today >= MAX_DAILY_QUESTION_ANSWERS:
@@ -138,6 +143,8 @@ class QuestionLogic(ActivityLogic):
             question.difficulty = update.difficulty
         if update.tags is not None:
             question.tags = update.tags
+        if update.is_hidden is not None:
+            question.is_hidden = update.is_hidden
         if update.answers is not None:
             current_answers = {answer.id: answer for answer in question.answers}
             updated_answers = []
@@ -173,11 +180,14 @@ class QuestionLogic(ActivityLogic):
         await user.player.awaitable_attrs.erudite
         if user.player.erudite is None or user.player.erudite.id != question.author_id:
             raise PermissionException()
-        await self.dao.question.delete_one_by_id(question.id)
+        question.is_deleted = True
+        question.is_hidden = True
+        await self.dao.flush()
         return {"deleted": True}
 
     async def answer_the_question(self, question_id: int, answer_id: int):
         question = await self.check_question(question_id)
+        self.ensure_question_active(question)
         answer = question.answer_ids.get(answer_id)
         if answer is None:
             raise AnswerDontFindException()
@@ -211,6 +221,7 @@ class QuestionLogic(ActivityLogic):
 
     async def answer_the_question_incorrect(self, question_id: int):
         question = await self.check_question(question_id)
+        self.ensure_question_active(question)
         answer = next(
             (answer for answer in question.answers if not answer.is_correct),
             None,

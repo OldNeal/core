@@ -24,6 +24,7 @@ class QuestionUpdate(BaseAPIValidate):
     description: str | None = None
     difficulty: int | None = Field(default=None, ge=1, le=10)
     tags: list[str] | None = None
+    is_hidden: bool | None = None
     answers: list[QuestionAnswerUpdate] | None = None
 
 class QueryQuestionUpdate(QueryBody):

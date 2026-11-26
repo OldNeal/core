@@ -7,6 +7,8 @@ class QuestionDB(Base):
     description: Mapped[str | None] = mapped_column(default=None)
     difficulty: Mapped[int] = mapped_column(default=1, server_default='1')
     tags: Mapped[list[str]] = mapped_column(JSON, default=list, server_default='[]')
+    is_hidden: Mapped[bool] = mapped_column(default=False, server_default='false', nullable=False)
+    is_deleted: Mapped[bool] = mapped_column(default=False, server_default='false', nullable=False)
     author_id: Mapped[int] = mapped_column(ForeignKey('EruditeDB.id'), default=None)
     author: Mapped['EruditeDB'] = relationship('EruditeDB', uselist=False, lazy='joined', back_populates='questions')
     answers: Mapped[list['AnswerQuestionDB']] = relationship('AnswerQuestionDB', uselist=True, lazy='joined', back_populates='question', cascade='all, delete-orphan')
