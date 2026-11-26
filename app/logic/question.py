@@ -95,9 +95,7 @@ class QuestionLogic(ActivityLogic):
         user = await self.check_erudite(self.check_is_not_none(self.purpose_user_id, self.user_id))
         question = QuestionDB(
             body=data.question.body,
-            description=data.question.description,
-            difficulty=data.question.difficulty,
-            tags=data.question.tags,
+            description=data.question.description
         )
         await user.player.erudite.awaitable_attrs.questions
         user.player.erudite.questions.append(question)
