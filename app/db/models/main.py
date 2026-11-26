@@ -47,7 +47,7 @@ class UserDB(Base):
 
     @property
     def setting(self):
-        return self._setting or {}
+        return {'name':self.name, 'emodzi':self.emodzi, 'custom_emodzi_id':self.custom_emodzi_id, 'description':self.description} | self._setting or {}
 
     @setting.setter
     def setting(self, value: dict):

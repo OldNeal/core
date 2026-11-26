@@ -29,4 +29,4 @@ class ActivityStore(BaseStore):
             await self.client.expire(key, activity_point_limit_ttl)
         if activity_points > activity_points_limit:
             raise ActivityPointLimitError()
-        return new_activity_points
+        return new_activity_points 

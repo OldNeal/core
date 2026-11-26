@@ -1,3 +1,5 @@
+from datetime import datetime, time, timedelta, timezone
+
 from app.db.models.item import InventoryDB, ItemDB, ItemSketchDB
 from app.exception.item import ItemDontFindException, ItemQuantityException
 from config import settings
@@ -6,7 +8,6 @@ from app.logic.item import ItemLogic
 
 ACTIVITY_POINTS_TAG = 'activity_point'
 ACTIVITY_POINTS_MESSAGE = 10
-GET_ACTIVITY_POINTS_LIMIT_TTL_MESSAGE = 60*60*60*24
 GET_ACTIVITY_POINTS_LIMIT_MESSAGE = 1200
 ACTIVITY_POINTS_QUESTION = 150
 
@@ -49,10 +50,13 @@ class ActivityLogic(ItemLogic):
 
     async def get_activity_points_message(self, count: int = 1):
         user = await self.get_user(self.user_id)
+        now = datetime.now(timezone.utc)
+        next_utc_midnight = datetime.combine(now.date() + timedelta(days=1), time.min, tzinfo=timezone.utc)
+        seconds_until_reset = int((next_utc_midnight - now).total_seconds()) + 1
         points = await self.store.activity.check_activity_points(
             self.user_id,
             count * ACTIVITY_POINTS_MESSAGE * settings.activity_points_factor,
-            GET_ACTIVITY_POINTS_LIMIT_TTL_MESSAGE, 
+            seconds_until_reset,
             GET_ACTIVITY_POINTS_LIMIT_MESSAGE
         )
         points, item = await self.change_activity_points(user, points)
@@ -94,6 +98,6 @@ class ActivityLogic(ItemLogic):
             used=used,
             limit=limit,
             remaining=max(0, limit - used),
-            ttl=GET_ACTIVITY_POINTS_LIMIT_TTL_MESSAGE,
+            ttl=ttl,
             points_per_message=ACTIVITY_POINTS_MESSAGE * settings.activity_points_factor,
         )
