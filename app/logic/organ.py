@@ -77,7 +77,6 @@ class OrganLogic(BaseLogic):
         if owner:
             raise OrganPermissioError(owner_id=owner.telegram.user, to_print=to_print)
         return True
-    
 
     async def check_is_member(self, user_id: int | None = None):
         user = await self.get_user(user_id)
@@ -171,15 +170,6 @@ class OrganLogic(BaseLogic):
     async def return_for_buttons(self, user: UserDB, organ_id: int | None = None):
         organ_id = organ_id or self.organ_id
         owner = await self.get_owner(organ_id)
-        organ = await self.check_exist_organ(organ_id)
-        members = await organ.awaitable_attrs.members
-        can_delete = (
-            user.member is not None
-            and user.member.organ_id == organ.id
-            and user.member.rank == 0
-            and len(members) == 1
-            and members[0].user_id == user.id
-        )
         return ForButtons(
                 is_member=self.boolean(user, func=self.is_member),
                 organ_id=user.member.organ_id if user.member else organ_id,
@@ -188,8 +178,7 @@ class OrganLogic(BaseLogic):
                 is_redact_titul=self.boolean(user, 'redact_titul', func=self.is_permission),
                 is_kick=self.boolean(user, 'kick', func=self.is_permission),
                 is_capture=self.boolean(owner, func=self.is_capture),
-                is_give=self.boolean(user, func=self.is_owner),
-                is_delete=can_delete,
+                is_give=self.boolean(user, func=self.is_owner)
             )
 
     async def return_organs_info(self, organs: list[OrganDB]):
