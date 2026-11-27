@@ -6,6 +6,7 @@ from app.validate.api.base import (
     AnswerActivityPoints,
     AnswerActivityPointsLimit,
     AnswerActivityPointsLimitReset,
+    AnswerActivityPointsGlobalLimitReset,
     QueryBody,
 )
 
@@ -57,3 +58,15 @@ async def activity_points_limit_reset(
         purpose_user_id=user_id,
         is_admin=query.is_admin,
     ).reset_activity_points_limit(user_id)
+
+
+@activity_router.patch('/limit/reset/global', response_model=AnswerActivityPointsGlobalLimitReset)
+async def activity_points_limit_reset_global(
+    query: QueryBody,
+    session=Depends(get_session()),
+):
+    return await ActivityService(
+        session,
+        user_id=query.user_id,
+        is_admin=query.is_admin,
+    ).reset_all_activity_points_limits()

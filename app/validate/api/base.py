@@ -138,6 +138,9 @@ class AnswerActivityPoints(ActivityPoints):
 class AnswerActivityPointsLimitReset(ActivityPoints):
     pass
 
+class AnswerActivityPointsGlobalLimitReset(AnswerBaseBody):
+    deleted: int = 0
+
 class AnswerActivityPointsLimit(AnswerBody):
     used: int = 0
     limit: int = 0

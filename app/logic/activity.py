@@ -3,7 +3,7 @@ from datetime import datetime, time, timedelta, timezone
 from app.db.models.item import InventoryDB, ItemDB, ItemSketchDB
 from app.exception.item import ItemDontFindException, ItemQuantityException
 from config import settings
-from app.validate.api.base import AnswerActivityPoints, AnswerActivityPointsLimit
+from app.validate.api.base import AnswerActivityPoints, AnswerActivityPointsLimit, AnswerActivityPointsGlobalLimitReset
 from app.logic.item import ItemLogic
 
 ACTIVITY_POINTS_TAG = 'activity_point'
@@ -82,6 +82,11 @@ class ActivityLogic(ItemLogic):
         await self.store.activity.reset_activity_points_limit(purpose_user_id)
         admin = await self.get_user(self.user_id)
         return await self._activity_points_answer(admin, target)
+
+    async def reset_all_activity_points_limits(self):
+        self.check_permission()
+        deleted = await self.store.activity.reset_all_activity_points_limits()
+        return AnswerActivityPointsGlobalLimitReset(deleted=deleted)
 
 
     async def get_activity_points_count(self):

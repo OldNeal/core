@@ -15,6 +15,18 @@ class ActivityStore(BaseStore):
     async def reset_activity_points_limit(self, user_id: int):
         return await self.client.delete(self.hashs.get_points(user_id))
 
+    async def reset_all_activity_points_limits(self):
+        deleted = 0
+        keys = []
+        async for key in self.client.scan_iter(match='act:get-points:*'):
+            keys.append(key)
+            if len(keys) >= 500:
+                deleted += await self.client.delete(*keys)
+                keys.clear()
+        if keys:
+            deleted += await self.client.delete(*keys)
+        return deleted
+
     async def get_activity_points_limit(self, user_id: int):
         key = self.hashs.get_points(user_id)
         count = await self.client.get(key)
