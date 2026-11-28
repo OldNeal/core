@@ -130,6 +130,17 @@ class ItemLogic(BaseLogic):
         new_quantity, item = await self._change_item_quantity(item, sketch.id, inventory.id, quantity, give)        
 
         await self.dao.flush()
+        await self.store.message.save_item_notification(
+            action='give' if give else 'take',
+            tg_id=purpose.tg_id,
+            user_id=purpose.id,
+            item_id=sketch.id,
+            quantity=quantity,
+            remaining=new_quantity,
+            settings=purpose.setting,
+            item_name=sketch.name,
+            item_emodzi=sketch.emodzi,
+        )
         return AnswerItemChange(
             user=self.return_query_body(user),
             purpose=self.return_query_body(purpose),

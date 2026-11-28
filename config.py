@@ -31,7 +31,13 @@ class Settings:
     REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
     REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 
+    TELEGRAM_NOTIFICATIONS_ENABLED = os.getenv('telegram_notifications_enabled', 'true').strip().lower() in {'t', 'true', '1'}
+    TELEGRAM_NOTIFY_ACTIVITY_POINTS = os.getenv('telegram_notify_activity_points', 'true').strip().lower() in {'t', 'true', '1'}
+    TELEGRAM_NOTIFY_ITEM_GIVE = os.getenv('telegram_notify_item_give', 'true').strip().lower() in {'t', 'true', '1'}
+    TELEGRAM_NOTIFY_ITEM_TAKE = os.getenv('telegram_notify_item_take', 'true').strip().lower() in {'t', 'true', '1'}
+
     VALUES = {}
+    TELEGRAM_NOTIFY_ORGAN = os.getenv('telegram_notify_organ', 'true').strip().lower() in {'t', 'true', '1'}
 
     def get_db_url(self):
         return (f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@"

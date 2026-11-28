@@ -20,6 +20,10 @@ class TelegramBody(BaseBody):
 class UserSettingValidate(BaseAPIValidate):
     hidden_top: bool 
     get_notify: bool 
+    notify_activity_points: bool = True
+    notify_item_give: bool = True
+    notify_item_take: bool = True
+    notify_organ: bool = True
     notify_platform: str
     notify_type: str
     use_ephemeral_message: bool

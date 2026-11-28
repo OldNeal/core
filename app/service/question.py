@@ -32,8 +32,23 @@ class QuestionService(BaseService):
     async def list(self, page: int | None = None, per_page: int = 5):
         return await self.logic.list(page, per_page)
 
-    async def random_question(self, correct_count: int = 1, incorrect_count: int = 3):
-        return await self.logic.random_question(correct_count, incorrect_count)
+    async def random_question(
+        self,
+        correct_count: int = 1,
+        incorrect_count: int = 3,
+        difficulty: int | None = None,
+        min_difficulty: int | None = None,
+        max_difficulty: int | None = None,
+        tag: str | None = None,
+    ):
+        return await self.logic.random_question(
+            correct_count,
+            incorrect_count,
+            difficulty,
+            min_difficulty,
+            max_difficulty,
+            tag,
+        )
 
     async def my_questions(self, page: int | None = None, per_page: int = 5):
         return await self.logic.my_questions(page, per_page)

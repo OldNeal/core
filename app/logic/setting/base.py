@@ -1,10 +1,9 @@
-import json
 import re
-from pathlib import Path
 from typing import ClassVar
 
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 
+from app.setting_metadata import SETTING_METADATA as _SETTING_METADATA
 from app.validate.logic.setting import (
     BaseLogicValidate,
     OrganSettingValidate,
@@ -21,9 +20,6 @@ from app.exception.setting import (
     RankValidateError,
 )
 from app.db.models.organ import OrganDB
-
-with Path(__file__).with_name('metadata.json').open(encoding='utf-8') as metadata_file:
-    _SETTING_METADATA = json.load(metadata_file)
 
 SETTING_METADATA = {
     'groups': {

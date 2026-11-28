@@ -7,7 +7,7 @@ from app.db.models.player import PlayerDB
 from app.db.models.question import EruditeDB, QuestionDB, AnswerQuestionDB, ResultsQuestionDB
 from app.db.models.item import InventoryDB, ItemDB, ItemSketchDB
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select, update, delete, func, join, or_, all_, and_, any_
+from sqlalchemy import select, update, delete, func, join, or_, all_, and_, any_, cast, String
 from sqlalchemy.orm import selectinload, joinedload
 from app.db.base import Base
 from datetime import datetime, date
@@ -702,6 +702,10 @@ class QuestionDAO(BaseDAO[QuestionDB]):
         erudite_id: int,
         answered_after: datetime,
         incorrect_answered_after: datetime,
+        difficulty: int | None = None,
+        min_difficulty: int | None = None,
+        max_difficulty: int | None = None,
+        tag: str | None = None,
     ):
         correct_answers_query = (
             select(func.count(AnswerQuestionDB.id))
@@ -759,6 +763,16 @@ class QuestionDAO(BaseDAO[QuestionDB]):
             .order_by(func.random())
             .limit(1)
         )
+        if difficulty is not None:
+            query = query.where(self.model.difficulty == difficulty)
+        if min_difficulty is not None:
+            query = query.where(self.model.difficulty >= min_difficulty)
+        if max_difficulty is not None:
+            query = query.where(self.model.difficulty <= max_difficulty)
+        if tag is not None:
+            query = query.where(
+                func.lower(cast(self.model.tags, String)).contains(tag.strip().lower(), autoescape=True)
+            )
         result = await self.session.execute(query)
         return result.unique().scalars().first()
 

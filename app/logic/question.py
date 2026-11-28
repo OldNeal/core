@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from app.logic.activity import ActivityLogic, ACTIVITY_POINTS_QUESTION
 from app.validate.api.question import (
     AnswerAllQuestions,
+    AnswerMyQuestions,
     AnswerQuestion,
     AnswerQuestionAnswer,
     AnswerQuestionSearch,
@@ -12,6 +13,7 @@ from app.validate.api.question import (
     AnswerUserQuestionStatistics,
     AnswerQuestionLimit,
     Question,
+    QuestionSummary,
     QuestionAnswer,
     QuestionAnswerStatistics,
     QueryQuestionCreate,
@@ -92,7 +94,14 @@ class QuestionLogic(ActivityLogic):
 
     async def questions_response(self, questions: list[QuestionDB]):
         return [
-            self.question_body(question, show_correct=True)
+            QuestionSummary(
+                question_id=question.id,
+                body=question.body,
+                description=question.description,
+                total_answers=len(question.answers),
+                difficulty=question.difficulty,
+                tags=question.tags or [],
+            )
             for question in questions
         ]
 
@@ -100,7 +109,9 @@ class QuestionLogic(ActivityLogic):
         user = await self.check_erudite(self.check_is_not_none(self.purpose_user_id, self.user_id))
         question = QuestionDB(
             body=data.question.body,
-            description=data.question.description
+            description=data.question.description,
+            difficulty=data.question.difficulty,
+            tags=data.question.tags,
         )
         await user.player.erudite.awaitable_attrs.questions
         user.player.erudite.questions.append(question)
@@ -112,7 +123,11 @@ class QuestionLogic(ActivityLogic):
             AnswerQuestionDB(body=answer, is_correct=False)
             for answer in data.question.incorrect_answers
         ])
-        activity_points, item = await self.change_activity_points(user, CREATE_QUESTION_ACTIVITY_POINT)
+        activity_points, item = await self.change_activity_points(
+            user,
+            CREATE_QUESTION_ACTIVITY_POINT,
+            'награда за создание вопроса',
+        )
         await self.dao.flush()
         self.botlog.question_create(question.id, user.id)
         return AnswerQuestion(
@@ -266,7 +281,15 @@ class QuestionLogic(ActivityLogic):
             count=count,
         )
 
-    async def random_question(self, correct_count: int = 1, incorrect_count: int = 3):
+    async def random_question(
+        self,
+        correct_count: int = 1,
+        incorrect_count: int = 3,
+        difficulty: int | None = None,
+        min_difficulty: int | None = None,
+        max_difficulty: int | None = None,
+        tag: str | None = None,
+    ):
         user = await self.check_erudite(self.user_id)
         await self.check_daily_question_limit(user.id)
         erudite_id = user.player.erudite.id
@@ -279,6 +302,10 @@ class QuestionLogic(ActivityLogic):
             erudite_id,
             answered_after,
             incorrect_answered_after,
+            difficulty,
+            min_difficulty,
+            max_difficulty,
+            tag,
         )
         if question is None:
             raise QuestionDontFindException('Вопросы пока что закончились')
@@ -313,7 +340,7 @@ class QuestionLogic(ActivityLogic):
             page,
             per_page,
         )
-        return AnswerAllQuestions(
+        return AnswerMyQuestions(
             questions=[self.question_body(question, show_correct=True) for question in questions],
             page=self.pagination(page, per_page, count),
             count=count,
@@ -332,6 +359,8 @@ class QuestionLogic(ActivityLogic):
             user=self.return_query_body(user),
             purpose=self.return_query_body(user),
             question_id=question_id,
+            difficulty=question.difficulty,
+            tags=question.tags or [],
             answers=[
                 QuestionAnswerStatistics(
                     answer_id=answer_id,

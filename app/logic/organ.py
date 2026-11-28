@@ -6,6 +6,17 @@ from app.logic.setting import OrganSetting
 from app.exception.organ import DontMemberError, DontEnterPurposeError, ExistRankError, ALreadyOwnerError, ExistOrganError, InOneOrganError, ALreadyMemberError, OrganPermissioError, OrganPermissionNewRankError, HiddenOrganError, ClosenOrganError, OrganPermissionPurposeRankError, OrganHasOtherMembersError
 
 class OrganLogic(BaseLogic):
+    async def _notify_member(self, action, user, purpose, old_value=None, new_value=None):
+        if user.id == purpose.id:
+            return
+        organ = user.member.organ
+        await self.store.message.save_organ_notification(
+            action=action, tg_id=purpose.tg_id, user_id=purpose.id,
+            actor_id=user.id, actor_name=user.name,
+            organ_id=organ.id, organ_name=organ.name,
+            settings=purpose.setting, old_value=old_value, new_value=new_value,
+        )
+
     def __init__(self, session, user_id: int | None = None, purpose_user_id: int | None = None, organ_id: int | None = None, is_admin: bool = False):
         super().__init__(session, user_id, purpose_user_id, is_admin)
         self.organ_id = organ_id
@@ -378,6 +389,8 @@ class OrganLogic(BaseLogic):
         await self.dao.flush()
         self.log_kwargs = self.log_kwargs | {'organ_name':user.member.organ.name, 'organ_id':user.member.organ.id}
         self.botlog.organ_rank(old_rank=old_rank, new_rank=purpose.member.rank, **self.log_kwargs)
+        if old_rank != purpose.member.rank:
+            await self._notify_member('rank', user, purpose, old_rank, purpose.member.rank)
         return AnswerRedactRank(
             user=self.return_query_body(user),
             purpose=self.return_query_body(purpose),
@@ -393,6 +406,7 @@ class OrganLogic(BaseLogic):
         await self.dao.flush()
         self.log_kwargs = self.log_kwargs | {'organ_name':user.member.organ.name, 'organ_id':user.member.organ.id}
         self.botlog.organ_kick(old_rank=old_rank, **self.log_kwargs)
+        await self._notify_member('kick', user, purpose, old_rank)
         return await self.return_organ_info(purpose, user.member.organ)
     
     async def titul_redact(self, titul: str | None = None):
@@ -402,6 +416,8 @@ class OrganLogic(BaseLogic):
         await self.dao.flush()
         self.log_kwargs = self.log_kwargs | {'organ_name':user.member.organ.name, 'organ_id':user.member.organ.id}
         self.botlog.organ_titul(old_titul=old_titul, new_titul=purpose.member.titul, **self.log_kwargs)
+        if old_titul != titul:
+            await self._notify_member('titul', user, purpose, old_titul, titul)
         return AnswerRedactTitul(
             user=self.return_query_body(user),
             purpose=self.return_query_body(purpose),
@@ -420,14 +436,15 @@ class OrganLogic(BaseLogic):
     
     async def give(self):
         user, purpose = await self.check_give()
-        user.member.rank = 1
-        purpose.member.rank = 0
         old_rank = user.member.rank
         old_rank_purpose = purpose.member.rank
+        user.member.rank = 1
+        purpose.member.rank = 0
         await self.dao.flush()
         self.log_kwargs = self.log_kwargs | {'organ_name':user.member.organ.name, 'organ_id':user.member.organ.id}
         self.botlog.organ_rank(old_rank=old_rank, new_rank=user.member.rank, **self.log_kwargs)
         self.botlog.organ_rank(old_rank=old_rank_purpose, new_rank=purpose.member.rank, **self.log_kwargs)
+        await self._notify_member('give', user, purpose, old_rank_purpose, purpose.member.rank)
         return AnswerOrganGive(
             user=await self.query_body(self.user_id),
             purpose=await self.query_body(purpose.id),

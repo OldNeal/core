@@ -5,6 +5,7 @@ from app.service.question import QuestionService
 from app.validate.api.base import QueryBody
 from app.validate.api.question import (
     AnswerAllQuestions,
+    AnswerMyQuestions,
     AnswerQuestion,
     AnswerQuestionAnswer,
     AnswerQuestionSearch,
@@ -98,16 +99,20 @@ async def question_random(
     query: QueryBody,
     correct_count: int = Query(1, ge=1, description='Количество правильных ответов'),
     incorrect_count: int = Query(3, ge=3, description='Количество неправильных ответов'),
+    difficulty: int | None = Query(None, ge=1, le=10, description='Точная сложность вопроса'),
+    min_difficulty: int | None = Query(None, ge=1, le=10, description='Минимальная сложность вопроса'),
+    max_difficulty: int | None = Query(None, ge=1, le=10, description='Максимальная сложность вопроса'),
+    tag: str | None = Query(None, description='Подстрока для поиска в тегах вопроса'),
     session=Depends(get_session()),
 ):
     return await QuestionService(
         session,
         user_id=query.user_id,
         is_admin=query.is_admin,
-    ).random_question(correct_count, incorrect_count)
+    ).random_question(correct_count, incorrect_count, difficulty, min_difficulty, max_difficulty, tag)
 
 
-@question_router.post('/my', response_model=AnswerAllQuestions, response_model_exclude_none=True)
+@question_router.post('/my', response_model=AnswerMyQuestions, response_model_exclude_none=True)
 async def question_my(
     query: QueryBody,
     page: int | None = Query(None, ge=0, description='Номер страницы'),

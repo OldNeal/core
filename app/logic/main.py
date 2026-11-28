@@ -21,7 +21,7 @@ class MainLogic(BaseLogic):
         setting = UserSetting(user.setting)
         setting.update(parametrs)
         user.setting = setting.model_dump_db()
-        self.dao.user.update_obj(user, user.setting)
+        self.dao.user.update_obj(user, setting.model_dump())
         await self.dao.flush()
         return AnswerUserSetting(user=self.return_query_body(user), settings=setting.validate)
 

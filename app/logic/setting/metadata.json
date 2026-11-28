@@ -6,6 +6,12 @@
       "custom_emodzi_id": null,
       "description": null
     },
+    "notifications": {
+      "name": "Уведомления",
+      "emodzi": "🔔",
+      "custom_emodzi_id": null,
+      "description": "Настройки получения и доставки уведомлений."
+    },
     "privacy": {
       "name": "Конфиденциальность",
       "emodzi": "🔒",
@@ -49,7 +55,7 @@
       },
       "get_notify": {
         "name": "Получать уведомления",
-        "group": "main",
+        "group": "notifications",
         "description": "Включает или отключает уведомления.",
         "is_redact": true,
         "is_hidden": false,
@@ -67,9 +73,117 @@
         "allowed_values": null,
         "depends_on": null
       },
+      "notify_activity_points": {
+        "name": "Уведомления о начислении очков активности",
+        "group": "notifications",
+        "description": "Включает или отключает уведомления о получении очков активности.",
+        "is_redact": true,
+        "is_hidden": false,
+        "resettable": false,
+        "emodzi": "✨",
+        "custom_emodzi_id": null,
+        "min_value": null,
+        "max_value": null,
+        "min_length": null,
+        "max_length": null,
+        "pattern": null,
+        "key_min_value": null,
+        "key_max_value": null,
+        "choises": null,
+        "allowed_values": null,
+        "depends_on": [
+          {
+            "tag": "get_notify",
+            "operator": "equals",
+            "value": true,
+            "description": "Доступно, когда уведомления включены."
+          }
+        ]
+      },
+      "notify_item_give": {
+        "name": "Уведомления о выдаче предметов",
+        "group": "notifications",
+        "description": "Включает или отключает уведомления о выдаче предметов.",
+        "is_redact": true,
+        "is_hidden": false,
+        "resettable": false,
+        "emodzi": "🎁",
+        "custom_emodzi_id": null,
+        "min_value": null,
+        "max_value": null,
+        "min_length": null,
+        "max_length": null,
+        "pattern": null,
+        "key_min_value": null,
+        "key_max_value": null,
+        "choises": null,
+        "allowed_values": null,
+        "depends_on": [
+          {
+            "tag": "get_notify",
+            "operator": "equals",
+            "value": true,
+            "description": "Доступно, когда уведомления включены."
+          }
+        ]
+      },
+      "notify_item_take": {
+        "name": "Уведомления об отнятии предметов",
+        "group": "notifications",
+        "description": "Включает или отключает уведомления об отнятии предметов.",
+        "is_redact": true,
+        "is_hidden": false,
+        "resettable": false,
+        "emodzi": "📦",
+        "custom_emodzi_id": null,
+        "min_value": null,
+        "max_value": null,
+        "min_length": null,
+        "max_length": null,
+        "pattern": null,
+        "key_min_value": null,
+        "key_max_value": null,
+        "choises": null,
+        "allowed_values": null,
+        "depends_on": [
+          {
+            "tag": "get_notify",
+            "operator": "equals",
+            "value": true,
+            "description": "Доступно, когда уведомления включены."
+          }
+        ]
+      },
+      "notify_organ": {
+        "name": "Уведомления организации",
+        "group": "notifications",
+        "description": "Изменение ранга и титула, исключение и передача владения организацией.",
+        "is_redact": true,
+        "is_hidden": false,
+        "resettable": false,
+        "emodzi": "🏛",
+        "custom_emodzi_id": null,
+        "min_value": null,
+        "max_value": null,
+        "min_length": null,
+        "max_length": null,
+        "pattern": null,
+        "key_min_value": null,
+        "key_max_value": null,
+        "choises": null,
+        "allowed_values": null,
+        "depends_on": [
+          {
+            "tag": "get_notify",
+            "operator": "equals",
+            "value": true,
+            "description": "Доступно, когда уведомления включены."
+          }
+        ]
+      },
       "notify_platform": {
         "name": "Платформа уведомлений",
-        "group": "main",
+        "group": "notifications",
         "description": "Платформа для получения уведомлений.",
         "is_redact": false,
         "is_hidden": true,
@@ -100,7 +214,7 @@
       },
       "notify_type": {
         "name": "Тип уведомлений",
-        "group": "main",
+        "group": "notifications",
         "description": "Способ доставки уведомлений.",
         "is_redact": true,
         "is_hidden": false,

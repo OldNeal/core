@@ -43,9 +43,16 @@ class ActivityLogic(ItemLogic):
             get_activity_points=points,
         )
 
-    async def change_activity_points(self, user, points: int):
+    async def change_activity_points(self, user, points: int, reason: str):
         sketch, inventory, item = await self._activity_point_item(user, create=True)
         quantity, item = await self._change_item_quantity(item, sketch.id, inventory.id, points, True)
+        await self.store.message.save_activity_point_notification(
+            tg_id=user.tg_id,
+            user_id=user.id,
+            points=points,
+            reason=reason,
+            settings=user.setting,
+        )
         return points, item
 
     async def get_activity_points_message(self, count: int = 1):
@@ -59,7 +66,7 @@ class ActivityLogic(ItemLogic):
             seconds_until_reset,
             GET_ACTIVITY_POINTS_LIMIT_MESSAGE
         )
-        points, item = await self.change_activity_points(user, points)
+        points, item = await self.change_activity_points(user, points, 'награда за сообщения')
         await self.dao.flush()
         self.botlog.get_activity_points(points, item.quantity, 'награда за сообщения')
         return AnswerActivityPoints(
@@ -71,7 +78,11 @@ class ActivityLogic(ItemLogic):
 
     async def get_activity_points_question(self):
         user = await self.get_user(self.user_id)
-        points, item = await self.change_activity_points(user, ACTIVITY_POINTS_QUESTION)
+        points, item = await self.change_activity_points(
+            user,
+            ACTIVITY_POINTS_QUESTION,
+            'награда за правильный ответ на вопрос',
+        )
         await self.dao.flush()
         self.botlog.get_activity_points(points, item.quantity, 'награда за правильный ответ на вопрос')
         return points, item

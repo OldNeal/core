@@ -1,9 +1,10 @@
 from typing import Any, Literal
 
+from app.setting_metadata import SETTING_METADATA
 from app.validate.logic.base import BaseLogicValidate
 
 
-SettingGroupTag = Literal['main', 'privacy', 'permission', 'appearance']
+SettingGroupTag = Literal[tuple(SETTING_METADATA['groups'])]
 SettingDependencyOperator = Literal['equals', 'not_equals', 'in', 'not_in']
 SettingValueType = Literal['str', 'str-int']
 
@@ -33,7 +34,7 @@ class SettingSubparameterMetadata(BaseLogicValidate):
 class SettingParametrMetadata(BaseLogicValidate):
     tag: str
     name: str
-    group: SettingGroupTag
+    group: SettingGroupTag # pyright: ignore[reportInvalidTypeForm]
     type: str
     value_type: SettingValueType | None = None
     emodzi: str | None = None
@@ -61,7 +62,7 @@ class SettingSubparameterValidate(SettingSubparameterMetadata):
 
 
 class SettingGroupMetadata(BaseLogicValidate):
-    tag: SettingGroupTag
+    tag: SettingGroupTag # pyright: ignore[reportInvalidTypeForm]
     name: str
     emodzi: str | None = None
     custom_emodzi_id: str | None = None

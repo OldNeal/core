@@ -4,6 +4,8 @@ from app.validate.api.base import AnswerBaseBody, AnswerBody, BaseAPIValidate, P
 class QustionBase(BaseAPIValidate):
     body: str
     description: str | None = None
+    difficulty: int = Field(default=1, ge=1, le=10)
+    tags: list[str] = Field(default_factory=list)
 
 class QuestionCreate(QustionBase):
     correct_answers: list[str]
@@ -39,6 +41,10 @@ class Question(QustionBase):
     question_id: int
     answers: list[QuestionAnswer]
 
+class QuestionSummary(QustionBase):
+    question_id: int
+    total_answers: int
+
 class AnswerQuestionAnswer(AnswerBody):
     answer_id: int
     is_correct: bool
@@ -50,6 +56,11 @@ class AnswerQuestion(AnswerBody):
     activity_points: int = 0
 
 class AnswerAllQuestions(AnswerBaseBody):
+    questions: list[QuestionSummary]
+    page: Page | None = None
+    count: int = 0
+
+class AnswerMyQuestions(AnswerBaseBody):
     questions: list[Question]
     page: Page | None = None
     count: int = 0
@@ -65,6 +76,8 @@ class QuestionAnswerStatistics(QuestionAnswer):
 
 class AnswerQuestionStatistics(AnswerBody):
     question_id: int
+    difficulty: int
+    tags: list[str] = Field(default_factory=list)
     answers: list[QuestionAnswerStatistics]
     statistics: 'UserQuestionStatistics'
 

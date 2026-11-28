@@ -17,9 +17,13 @@ class UserSetting(BaseSetting):
     type = 'user'
 
     hidden_top: bool = Field(default=False, json_schema_extra={'group': 'privacy'})
-    get_notify: bool = Field(default=True, json_schema_extra={'group': 'main'})
-    notify_platform: str = Field(default=list(NOTIFY_PLATFORMS)[0], json_schema_extra={'group': 'main', 'choises':NOTIFY_PLATFORMS})
-    notify_type: str = Field(default=list(NOTIFY_TYPES)[0], json_schema_extra={'group': 'main', 'choises':NOTIFY_TYPES})
+    get_notify: bool = Field(default=True, json_schema_extra={'group': 'notifications'})
+    notify_activity_points: bool = Field(default=True, json_schema_extra={'group': 'notifications'})
+    notify_item_give: bool = Field(default=True, json_schema_extra={'group': 'notifications'})
+    notify_item_take: bool = Field(default=True, json_schema_extra={'group': 'notifications'})
+    notify_organ: bool = Field(default=True, json_schema_extra={'group': 'notifications'})
+    notify_platform: str = Field(default=list(NOTIFY_PLATFORMS)[0], json_schema_extra={'group': 'notifications', 'choises':NOTIFY_PLATFORMS})
+    notify_type: str = Field(default=list(NOTIFY_TYPES)[0], json_schema_extra={'group': 'notifications', 'choises':NOTIFY_TYPES})
     use_ephemeral_message: bool = Field(default=True, json_schema_extra={'group': 'main'})
     use_rich_message: bool = Field(default=True, json_schema_extra={'group': 'main'})
 
@@ -39,7 +43,10 @@ class UserSetting(BaseSetting):
         return self.notify_type == list(NOTIFY_TYPES)[0]
   
 
-    @field_validator('hidden_top', 'get_notify', 'use_ephemeral_message', 'use_rich_message', mode='before')
+    @field_validator(
+        'hidden_top', 'get_notify', 'notify_activity_points', 'notify_item_give',
+        'notify_item_take', 'notify_organ', 'use_ephemeral_message', 'use_rich_message', mode='before'
+    )
     @classmethod
     def _validate_bool_fields(cls, value, info: ValidationInfo):
         return cls._validate_bool(value, info)
