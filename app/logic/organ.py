@@ -178,7 +178,8 @@ class OrganLogic(BaseLogic):
                 is_redact_titul=self.boolean(user, 'redact_titul', func=self.is_permission),
                 is_kick=self.boolean(user, 'kick', func=self.is_permission),
                 is_capture=self.boolean(owner, func=self.is_capture),
-                is_give=self.boolean(user, func=self.is_owner)
+                is_give=self.boolean(user, func=self.is_owner),
+                is_delete=self.boolean(user, func=self.is_owner)
             )
 
     async def return_organs_info(self, organs: list[OrganDB]):
